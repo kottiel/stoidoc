@@ -5,28 +5,34 @@
 #include <ctype.h>
 
 #include "label.h"
+#include <stdlib.h>
 
 #define INITIAL_CAP             3
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-  Column_header cols;
+    Column_header cols;
 
-  char buffer[MAX_COLUMNS] = {'\0'};
+    char buffer[MAX_COLUMNS] = {'\0'};
 
-  char **spreadsheet;
-  int spreadsheet_cap = INITIAL_CAP;
-  int spreadsheet_row = 0;
-  bool end_of_spreadsheet = false;
+    char **spreadsheet;
+    int spreadsheet_cap = INITIAL_CAP;
+    int spreadsheet_row = 0;
+    bool end_of_spreadsheet = false;
 
-  spreadsheet = (char **)malloc(INITIAL_CAP * sizeof(char *));
+    spreadsheet = (char **)malloc(INITIAL_CAP * sizeof(char *));
 
-  FILE *fp;
+    FILE *fp;
 
-  if ((fp = fopen("DCO-03.txt", "r")) == NULL) {
+    if (argc != 2) {
+        printf("usage: ./idoc filename.txt\n");
+        return EXIT_FAILURE;
+    }
+
+    if ((fp = fopen(argv[1], "r")) == NULL) {
       printf("File not found.\n");
       return EXIT_FAILURE;
-  } else {
+    } else {
 
     while (((fgets(buffer, MAX_COLUMNS, fp) != NULL)) && !end_of_spreadsheet) {
       if (spreadsheet_row >= spreadsheet_cap) {
@@ -36,7 +42,7 @@ int main(void) {
       //  find real length of printable buffer and append '\0' to make a string
       int real_length = MAX_COLUMNS - 1;
       char c = buffer[real_length];
-      while ((real_length > 0) && !isprint(c)) {
+      while ((real_length > 0) && !isalnum(c)) {
         real_length--;
         c = buffer[real_length];
       }
@@ -45,10 +51,10 @@ int main(void) {
         end_of_spreadsheet = true;
       else {
         real_length++;
-        buffer[real_length + 1] = '\0';
-        spreadsheet[spreadsheet_row] = (char *)malloc(real_length * sizeof(char) + 2);
+        buffer[real_length] = '\0';
+        spreadsheet[spreadsheet_row] = (char *)malloc(real_length * sizeof(char));
         strcpy(spreadsheet[spreadsheet_row], buffer);
-        memset(buffer, '\0', real_length * 2);
+        memset(buffer, '\0', MAX_COLUMNS);
         spreadsheet_row++;
       }
     }

@@ -22,13 +22,14 @@ typedef struct {
   unsigned int cap;
 } TDline;
 
-/** 
+/**
 
 */
 typedef struct {
   char   material[41];
   char   address[21];
   char   cautionstatement[21];
+  char   cemark[21];
   char   coostate[21];
   char   distby[21];
   char   ecrepaddress[21];
@@ -89,48 +90,59 @@ typedef struct {
 } Label_record;
 
 /**
- 
+
 */
 typedef struct {
-  unsigned short address;
-  unsigned short barcodetext;
-  unsigned short bomlevel;
-  unsigned short caution;
-  unsigned short cautionstate;
-  unsigned short consultifu;
-  unsigned short coostate;
-  unsigned short donotusedam;
-  unsigned short expdate;
-  unsigned short label;
-  unsigned short labelgraph1;
-  unsigned short labelgraph2;
-  unsigned short latexstate;
-  unsigned short level;
-  unsigned short logo1;
-  unsigned short logo2;
-  unsigned short logo3;
-  unsigned short logo4;
-  unsigned short logo5;
-  unsigned short lotgraphic;
-  unsigned short ltnumber;
-  unsigned short manufacturer;
-  unsigned short material;
-  unsigned short mfgdate;
-  unsigned short noresterile;
-  unsigned short phtdehp;
-  unsigned short quantity;
-  unsigned short refnumber;
-  unsigned short revision;
-  unsigned short rxonly;
-  unsigned short singleuse;
-  unsigned short sterilitytype;
-  unsigned short tdline;
-  unsigned short templatenumber;
-  unsigned short tfxlogo;
+    unsigned short address;
+    unsigned short barcodetext;
+    unsigned short bomlevel;
+    unsigned short caution;
+    unsigned short cautionstate;
+    unsigned short ce0120;
+    unsigned short consultifu;
+    unsigned short coostate;
+    unsigned short donotusedam;
+    unsigned short ecrep;
+    unsigned short ecrepaddress;
+    unsigned short expdate;
+    unsigned short flgraphic;
+    unsigned short label;
+    unsigned short labelgraph1;
+    unsigned short labelgraph2;
+    unsigned short latexfree;
+    unsigned short latexstate;
+    unsigned short level;
+    unsigned short logo1;
+    unsigned short logo2;
+    unsigned short logo3;
+    unsigned short logo4;
+    unsigned short logo5;
+    unsigned short lotgraphic;
+    unsigned short ltnumber;
+    unsigned short manufacturer;
+    unsigned short material;
+    unsigned short mfgdate;
+    unsigned short noresterile;
+    unsigned short patentstatement;
+    unsigned short phtdehp;
+    unsigned short phtbbp;
+    unsigned short phtdinp;
+    unsigned short pvcfree;
+    unsigned short quantity;
+    unsigned short ref;
+    unsigned short refnumber;
+    unsigned short revision;
+    unsigned short rxonly;
+    unsigned short singleuse;
+    unsigned short size;
+    unsigned short sterilitytype;
+    unsigned short tdline;
+    unsigned short templatenumber;
+    unsigned short tfxlogo;
 
 } Column_header;
 
-/** 
+/**
     identifies the column headings in a line and assigns true values to the
     elements in the Column_header struct that correspond to those elements.
     @param buffer is a pointer to the column headings line
@@ -144,13 +156,13 @@ int process_column_header(char *buffer, Column_header *cols);
     of buffer that occurs before the next occurrence of the delimiter,
     tab_str. It then removes that substring and delimiter from buffer. If there
     is no substr to capture between delimiters, the returned substring is
-    empty. 
-    
+    empty.
+
     Calling code is responsible for freeing the returned char pointer.
 
     @param buffer contains the string being divided into tokens
     @param tab_str is the one character delimiter
-    @return a pointer to a dynamically allocated char array 
+    @return a pointer to a dynamically allocated char array
 */
 char *get_token(char *buffer, char tab_str);
 
