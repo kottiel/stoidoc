@@ -3,6 +3,29 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+    This function initializes the dynamically allocated spreadsheet array.
+    @return 0 if successful, -1 if unsuccessful.
+*/
+int spreadsheet_init() {
+
+    spreadsheet_cap = INITIAL_CAP;
+
+    if ((spreadsheet = (char **)malloc(INITIAL_CAP * sizeof(char *))) == NULL)
+        return -1;
+    else
+        return 0;
+}
+
+int spreadsheet_expand() {
+
+    spreadsheet_cap *= 2;
+    if ((spreadsheet = (char **)realloc(spreadsheet, spreadsheet_cap * sizeof(char *))) == NULL)
+        return -1;
+    else
+        return 0;
+}
+
 char *get_token(char *buffer, char tab_str) {
     char *delimiter;
     int buffer_len = strlen(buffer);
@@ -29,7 +52,6 @@ char *get_token(char *buffer, char tab_str) {
         buffer[0] = '\0';
         buffer_len = 0;
     }
-    printf("%s ", token);
     return token;
 }
 

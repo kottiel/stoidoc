@@ -9,8 +9,15 @@
 #ifndef LABEL_H
 #define LABEL_H
 
+#define INITIAL_CAP             3
+#define SPREADSHEET_INIT_SIZE   3
 #define MAX_COLUMNS          1000
 #define TAB                  '\t'
+
+/** global variable spreadsheet that holds the label records  */
+extern char **spreadsheet;
+extern int spreadsheet_cap;
+extern int spreadsheet_row;
 
 /** Representation of a given label's tdline. */
 typedef struct {
@@ -165,5 +172,8 @@ int process_column_header(char *buffer, Column_header *cols);
     @return a pointer to a dynamically allocated char array
 */
 char *get_token(char *buffer, char tab_str);
+
+int spreadsheet_init();
+int spreadsheet_expand();
 
 #endif
