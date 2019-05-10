@@ -5,6 +5,8 @@
 #include <ctype.h>
 
 #include "label.h"
+#define   CR '\r'
+#define   LF '\n'
 
 char **spreadsheet;
 int spreadsheet_cap = 0;
@@ -12,32 +14,33 @@ int spreadsheet_row_number = 0;
 
 void read_spreadsheet(FILE *fp) {
 
-    char buffer[MAX_COLUMNS] = {'\0'};
-    bool end_of_spreadsheet = false;
-    int real_length;
+    // pre-process spreadsheet - remove all LF and replace all CRLF with LF
+    char c;
+    char buffer[MAX_COLUMNS];
+    bool line_not_empty = false;
 
-    while (((fgets(buffer, MAX_COLUMNS, fp) != NULL)) && !end_of_spreadsheet) {
-            if (spreadsheet_row_number >= spreadsheet_cap) {
-                spreadsheet_expand();
-            }
-            //  find real length of printable buffer and append '\0' to make a string
-            real_length = MAX_COLUMNS - 1;
-            char c = buffer[real_length];
-            while ((real_length > 0) && (!isalnum(c))) {
-                c = buffer[real_length];
-                real_length--;
-            }
+    int i = 0;
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == CR) {
+            if ((c = fgetc(fp)) == LF) {
+                buffer[i] = '\0';
+                if (line_not_empty) {
+                    if (spreadsheet_row_number >= spreadsheet_cap) {
+                        spreadsheet_expand();
+                    }
+                    spreadsheet[spreadsheet_row_number] = (char *)malloc(i * sizeof(char) + 2);
+                    strcpy(spreadsheet[spreadsheet_row_number], buffer);
+                    spreadsheet_row_number++;
+                    i = 0;
+                    line_not_empty = false;
+                }
 
-            if (real_length == 0)
-                end_of_spreadsheet = true;
-            else {
-                real_length++;
-                buffer[real_length] = '\0';
-                spreadsheet[spreadsheet_row_number] = (char *)malloc(real_length * sizeof(char) + 2);
-                strcpy(spreadsheet[spreadsheet_row_number], buffer);
-                memset(buffer, '\0', MAX_COLUMNS);
-                spreadsheet_row_number++;
+
             }
+        } else if ((c != CR) && (c != LF))
+            buffer[i++] = c;
+            if (c != '\t')
+                line_not_empty = true;
     }
 }
 
@@ -70,8 +73,8 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     labels = (Label_record *)malloc(spreadsheet_row_number * sizeof(Label_record));
-    
-    if (process_column_headers(spreadsheet[0], labels, &columns) == -1)
+
+    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1)
     {
         printf("Program quitting.\n");
         return EXIT_FAILURE;
@@ -79,10 +82,13 @@ int main(int argc, char *argv[]) {
 
     printf("Processed %d rows in %s\n", spreadsheet_row_number, argv[1]);
 
-    for (int i=0; i < spreadsheet_row_number; i++)
+    for (int i = 0; i < spreadsheet_row_number; i++)
         free(spreadsheet[i]);
-
     free(spreadsheet);
+
+    for (int i = 1; i < spreadsheet_row_number; i++)
+        free(labels[i].tdline);
+
     free(labels);
 
     return EXIT_SUCCESS;

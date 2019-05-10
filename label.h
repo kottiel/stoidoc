@@ -2,12 +2,13 @@
     @file command.h
     @author Jeff Kottiel (jhkottie)
     Together with .c, this component is responsible for functionality
-    pertaining to building the label records. It contains process_command, which is used
-    by the top-level component, fwsim.c.
+    pertaining to building the label records.
 */
 
 #ifndef LABEL_H
 #define LABEL_H
+
+#include <stdbool.h>
 
 #define INITIAL_CAP             3
 #define SPREADSHEET_INIT_SIZE   3
@@ -18,16 +19,6 @@
 extern char **spreadsheet;
 extern int spreadsheet_cap;
 extern int spreadsheet_row_number;
-
-/** Representation of a given label's tdline. */
-typedef struct {
-  /** Array of bytes representing entire tdline. */
-  unsigned char *description;
-  /** Number of currently used bytes in the tdline array. */
-  unsigned int len;
-  /** Capacity of the tdline array (it's typically over-allocated. */
-  unsigned int cap;
-} TDline;
 
 /**
 
@@ -56,44 +47,44 @@ typedef struct {
   char   sterilitytype[21];
   char   temperaturerange[21];
   char   version[21];
-  char   label[10];
+  char   gtin[15];
   char   level[11];
+  char   label[10];
+  char   ipn[10];
+  char   quantity[9];
   char   template[8];
-  TDline *tdlineptr;
-  long   gtin;
-  int    quantity;
-  int    ipn;
+  char   revision[4];
+  char   *tdline;
   short  bomlevel;
-  int    caution:1;
-  int    consult:1;
-  int    donotusedamaged:1;
-  int    ecrep:1;
-  int    electrosurifu:1;
-  int    expdate:1;
-  int    keepdry:1;
-  int    keepawayheat:1;
-  int    latex:1;
-  int    latexfree:1;
-  int    lotgraph:1;
-  int    maninbox:1;
-  int    manufacturer:1;
-  int    mfgdate:1;
-  int    nonsterile:1;
-  int    noresterilize:1;
-  int    phtbbp:1;
-  int    phtdinp:1;
-  int    phtdehp:1;
-  int    pvcfree:1;
-  int    ref:1;
-  int    refnum:1;
-  int    reusable:1;
-  int    revision:4;
-  int    serialnumber:1;
-  int    sizelogo:1;
-  int    rxonly:1;
-  int    singlepatienuse:1;
-  int    singleuseonly:1;
-  int    tfxlogo:1;
+  bool    caution;
+  bool    consultifu;
+  bool    donotusedamaged;
+  bool    ecrep;
+  bool    electrosurifu;
+  bool    expdate;
+  bool    keepdry;
+  bool    keepawayheat;
+  bool    latex;
+  bool    latexfree;
+  bool    lotgraphic;
+  bool    maninbox;
+  bool    manufacturer;
+  bool    mfgdate;
+  bool    nonsterile;
+  bool    noresterilize;
+  bool    phtbbp;
+  bool    phtdinp;
+  bool    phtdehp;
+  bool    pvcfree;
+  bool    ref;
+  bool    refnumber;
+  bool    reusable;
+  bool    serialnumber;
+  bool    sizelogo;
+  bool    rxonly;
+  bool    singlepatienuse;
+  bool    singleuseonly;
+  bool    tfxlogo;
 } Label_record;
 
 /**
@@ -156,7 +147,7 @@ typedef struct {
     @param cols is a pointer to a Column_header struct
     @return the number of column headings identified
 */
-int process_column_headers(char *buffer, Label_record *labels, Column_header *cols);
+int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols);
 
 /**
     get_token dynamically allocates a text substring and copies the substring
@@ -172,18 +163,9 @@ int process_column_headers(char *buffer, Label_record *labels, Column_header *co
     @return a pointer to a dynamically allocated char array
 */
 char *get_token(char *buffer, char tab_str);
+int get_field_contents_from_row(char *contents, int i, int count, char tab_str);
 int peek_nth_token(int n, const char *buffer, char delimiter);
 int spreadsheet_init();
 int spreadsheet_expand();
-
-/**
-    builds an instance of a Label_record based the contents of the passed
-    spreadsheet row and the corresponding column headings in cols.
-    
-    @param spreadsheet is a pointer to the column headings line
-    @param cols is a pointer to a Column_header struct
-    @return the number of column headings identified
-*/
-int process_spreadsheet_row(char *buffer, Label_record *labels, Column_header *cols);
 
 #endif
