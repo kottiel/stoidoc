@@ -56,11 +56,38 @@ char *get_token(char *buffer, char tab_str) {
     return token;
 }
 
+/**
+    returns the position of the nth occurrence of a delimiter in a char array
+*/
+int peek_nth_token(int n, const char *buffer, char delimiter) {
+
+    if (n == 0)
+        return 0;
+
+    int i = 0;
+    int hit_count = 0;
+    int length = strlen(buffer);
+
+    while ((i < length ) && (hit_count < n)) {
+        if (buffer[i] == delimiter)
+            hit_count++;
+        i++;
+    }
+    if (hit_count == n)
+        return i - 1;
+    else if (hit_count == (n - 1))
+        return length;
+    else
+        return 0;
+}
+
 int process_column_headers(char *buffer, Label_record *labels, Column_header *cols)
 {
     int count = 0;
+    int start = 0;
+    int stop = 0;
     char tab_str = TAB;
-    char *contents;
+    char contents[MAX_COLUMNS];
 
     while (strlen(buffer) > 0) {
 
@@ -70,7 +97,11 @@ int process_column_headers(char *buffer, Label_record *labels, Column_header *co
         if (strcmp(token, "LABEL")== 0) {
             cols->label = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
-                contents = peek_nth_token(count, spreadsheet[i], tab_str);
+                start = peek_nth_token(count, spreadsheet[i], tab_str) + 1;
+                stop = peek_nth_token(count + 1, spreadsheet[i], tab_str);
+                int length = stop - start;
+                strncpy(contents, buffer + start, length);
+                contents[length] = '\0';
                 strcpy(*(labels[i]).label, contents);
             }
         }

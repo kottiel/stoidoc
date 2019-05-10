@@ -172,7 +172,7 @@ int process_column_headers(char *buffer, Label_record *labels, Column_header *co
     @return a pointer to a dynamically allocated char array
 */
 char *get_token(char *buffer, char tab_str);
-
+int peek_nth_token(int n, const char *buffer, char delimiter);
 int spreadsheet_init();
 int spreadsheet_expand();
 
