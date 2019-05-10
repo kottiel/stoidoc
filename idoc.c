@@ -5,11 +5,10 @@
 #include <ctype.h>
 
 #include "label.h"
-#include <stdlib.h>
 
 char **spreadsheet;
 int spreadsheet_cap = 0;
-int spreadsheet_row = 0;
+int spreadsheet_row_number = 0;
 
 void read_spreadsheet(FILE *fp) {
 
@@ -18,7 +17,7 @@ void read_spreadsheet(FILE *fp) {
     int real_length;
 
     while (((fgets(buffer, MAX_COLUMNS, fp) != NULL)) && !end_of_spreadsheet) {
-            if (spreadsheet_row >= spreadsheet_cap) {
+            if (spreadsheet_row_number >= spreadsheet_cap) {
                 spreadsheet_expand();
             }
             //  find real length of printable buffer and append '\0' to make a string
@@ -34,17 +33,21 @@ void read_spreadsheet(FILE *fp) {
             else {
                 real_length++;
                 buffer[real_length] = '\0';
-                spreadsheet[spreadsheet_row] = (char *)malloc(real_length * sizeof(char) + 2);
-                strcpy(spreadsheet[spreadsheet_row], buffer);
+                spreadsheet[spreadsheet_row_number] = (char *)malloc(real_length * sizeof(char) + 2);
+                strcpy(spreadsheet[spreadsheet_row_number], buffer);
                 memset(buffer, '\0', MAX_COLUMNS);
-                spreadsheet_row++;
+                spreadsheet_row_number++;
             }
     }
 }
 
 int main(int argc, char *argv[]) {
 
-    Column_header cols;
+    // the Column_header struct that contains all spreadsheet col labels
+    Column_header columns;
+
+    // the Label_record array
+    Label_record *labels;
 
     if (spreadsheet_init() != 0) {
         printf("Could not initialize spreadsheet array. Exiting\n");
@@ -66,18 +69,21 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
 
-    if (process_column_header(spreadsheet[0], &cols) == -1) {
+    labels = (Label_record *)malloc(spreadsheet_row_number * sizeof(Label_record));
+    
+    if (process_column_headers(spreadsheet[0], labels, &columns) == -1)
+    {
         printf("Program quitting.\n");
         return EXIT_FAILURE;
     }
 
-/*     for (int i=0; i < spreadsheet_row; i++)
-        printf("%.80s\n", spreadsheet[i]); */
+    printf("Processed %d rows in %s\n", spreadsheet_row_number, argv[1]);
 
-    for (int i=0; i < spreadsheet_row; i++)
+    for (int i=0; i < spreadsheet_row_number; i++)
         free(spreadsheet[i]);
 
-  free(spreadsheet);
+    free(spreadsheet);
+    free(labels);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

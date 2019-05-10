@@ -52,20 +52,28 @@ char *get_token(char *buffer, char tab_str) {
         buffer[0] = '\0';
         buffer_len = 0;
     }
+
     return token;
 }
 
-int process_column_header(char *buffer, Column_header *cols) {
+int process_column_headers(char *buffer, Label_record *labels, Column_header *cols)
+{
     int count = 0;
     char tab_str = TAB;
+    char *contents;
 
     while (strlen(buffer) > 0) {
 
         // Keep extracting tokens while the delimiter is present in buffer
         char *token = get_token(buffer, tab_str);
 
-        if (strcmp(token, "LABEL")== 0)
+        if (strcmp(token, "LABEL")== 0) {
             cols->label = count;
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                contents = peek_nth_token(count, spreadsheet[i], tab_str);
+                strcpy(*(labels[i]).label, contents);
+            }
+        }
         else if (strcmp(token, "MATERIAL")== 0)
             cols->material = count;
         else if (strcmp(token, "TDLINE")== 0)
@@ -158,4 +166,22 @@ int process_column_header(char *buffer, Column_header *cols) {
         free(token);
     }
     return count;
+}
+
+int process_spreadsheet_row(char *buffer, Label_record *labels, Column_header *cols) {
+    
+    int count = 0;
+    char tab_str = TAB;
+
+    while (strlen(buffer) > 0)
+    {
+
+        // Keep extracting tokens while the delimiter is present in buffer
+        char *token = get_token(buffer, tab_str);
+
+        
+        count++;
+        free(token);
+    }
+    return 0;
 }

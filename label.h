@@ -17,7 +17,7 @@
 /** global variable spreadsheet that holds the label records  */
 extern char **spreadsheet;
 extern int spreadsheet_cap;
-extern int spreadsheet_row;
+extern int spreadsheet_row_number;
 
 /** Representation of a given label's tdline. */
 typedef struct {
@@ -156,7 +156,7 @@ typedef struct {
     @param cols is a pointer to a Column_header struct
     @return the number of column headings identified
 */
-int process_column_header(char *buffer, Column_header *cols);
+int process_column_headers(char *buffer, Label_record *labels, Column_header *cols);
 
 /**
     get_token dynamically allocates a text substring and copies the substring
@@ -175,5 +175,15 @@ char *get_token(char *buffer, char tab_str);
 
 int spreadsheet_init();
 int spreadsheet_expand();
+
+/**
+    builds an instance of a Label_record based the contents of the passed
+    spreadsheet row and the corresponding column headings in cols.
+    
+    @param spreadsheet is a pointer to the column headings line
+    @param cols is a pointer to a Column_header struct
+    @return the number of column headings identified
+*/
+int process_spreadsheet_row(char *buffer, Label_record *labels, Column_header *cols);
 
 #endif
