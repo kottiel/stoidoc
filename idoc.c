@@ -31,16 +31,16 @@ void read_spreadsheet(FILE *fp) {
                     spreadsheet[spreadsheet_row_number] = (char *)malloc(i * sizeof(char) + 2);
                     strcpy(spreadsheet[spreadsheet_row_number], buffer);
                     spreadsheet_row_number++;
-                    i = 0;
-                    line_not_empty = false;
                 }
-
+                i = 0;
+                line_not_empty = false;
 
             }
-        } else if ((c != CR) && (c != LF))
+        } else if ((c != CR) && (c != LF)) {
             buffer[i++] = c;
             if (c != '\t')
                 line_not_empty = true;
+        }
     }
 }
 

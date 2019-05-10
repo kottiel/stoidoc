@@ -79,6 +79,10 @@ int peek_nth_token(int n, const char *buffer, char delimiter) {
 
     return -1;
 }
+
+/**
+ *  returns the length of the string found in the field
+ */
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str) {
 
     int start = 0;
@@ -98,7 +102,7 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
     strncpy(contents, spreadsheet[i] + start, length);
     contents[length] = '\0';
 
-    return 0;
+    return strlen(contents);
 }
 
 int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
@@ -148,6 +152,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].gtin, contents);
+            }
+        }
+        else if (strcmp(token, "BOMLEVEL") == 0)
+        {
+            cols->bomlevel = count;
+            for (int i = 1; i < spreadsheet_row_number; i++)
+            {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strcpy(labels[i].bomlevel, contents);
             }
         }
         else if (strcmp(token, "CAUTION")== 0) {

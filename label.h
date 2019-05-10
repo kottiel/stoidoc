@@ -53,9 +53,10 @@ typedef struct {
   char   ipn[10];
   char   quantity[9];
   char   template[8];
+  char   bomlevel[5];
   char   revision[4];
   char   *tdline;
-  short  bomlevel;
+
   bool    caution;
   bool    consultifu;
   bool    donotusedamaged;
