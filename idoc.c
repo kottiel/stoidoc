@@ -44,6 +44,25 @@ void read_spreadsheet(FILE *fp) {
     }
 }
 
+void print_control_record(FILE *fpout) {
+
+    int sequence = 1;
+    // line 1
+    fprintf(fpout, "EDI_DC40  500000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "1234567");
+    // BarTender ibtdoc release
+    fprintf(fpout, "740");
+    fprintf(fpout, " 3012  Z1BTDOC                                                     ZSC_BTEND                                        SAPMEP    LS  MEPCLNT500                                                                                           I041      US  BARTENDER                                                                                            \n");
+    // line 2
+    fprintf(fpout, "Z2BTMH01000                   50000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "1234567");
+    fprintf(fpout, "%6d", sequence);
+    fprintf(fpout, "00000002\n");
+
+}
+
 int main(int argc, char *argv[]) {
 
     // the Column_header struct that contains all spreadsheet col labels
@@ -57,7 +76,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FILE *fp;
+    FILE *fp, *fpout;
 
     if (argc != 2) {
         printf("usage: ./idoc filename.txt\n");
@@ -80,7 +99,17 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    printf("Processed %d rows in %s\n", spreadsheet_row_number, argv[1]);
+    char outputfile[50];
+    sprintf(outputfile, "%s.txt", argv[1]);
+    printf("outputfile name is %s", outputfile);
+    
+
+    if ((fpout = fopen("idoc_output.txt", "w")) == NULL) {
+        printf("Could not open output file %s_idoc", outputfile);
+    }
+    
+    print_control_record(fpout);
+    fclose(fpout);
 
     for (int i = 0; i < spreadsheet_row_number; i++)
         free(spreadsheet[i]);
