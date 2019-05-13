@@ -57,6 +57,28 @@ char *get_token(char *buffer, char tab_str) {
     return token;
 }
 
+char *multi_tok(char *input, char *delimiter) {
+    static char *string;
+    if (input != NULL)
+        string = input;
+
+    if (string == NULL)
+        return string;
+
+    char *end = strstr(string, delimiter);
+    if (end == NULL) {
+        char *temp = string;
+        string = NULL;
+        return temp;
+    }
+
+    char *temp = string;
+
+    *end = '\0';
+    string = end + strlen(delimiter);
+    return temp;
+}
+
 /**
     returns the position of the nth occurrence of a delimiter in a char array
 */
@@ -79,10 +101,6 @@ int peek_nth_token(int n, const char *buffer, char delimiter) {
 
     return -1;
 }
-
-/**
- *  returns the length of the string found in the field
- */
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str) {
 
     int start = 0;
@@ -102,7 +120,7 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
     strncpy(contents, spreadsheet[i] + start, length);
     contents[length] = '\0';
 
-    return strlen(contents);
+    return 0;
 }
 
 int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
@@ -152,15 +170,6 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].gtin, contents);
-            }
-        }
-        else if (strcmp(token, "BOMLEVEL") == 0)
-        {
-            cols->bomlevel = count;
-            for (int i = 1; i < spreadsheet_row_number; i++)
-            {
-                get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].bomlevel, contents);
             }
         }
         else if (strcmp(token, "CAUTION")== 0) {
@@ -325,7 +334,10 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
             cols->lotgraphic = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                labels[i].lotgraphic = true;
+                if (strcmp("Y", contents) == 0)
+                    labels[i].lotgraphic = true;
+                else
+                    labels[i].lotgraphic = false;
             }
         }
         else if (strcmp(token, "LTNUMBER")== 0) {
@@ -335,25 +347,44 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                 strcpy(labels[i].ipn, contents);
             }
         }
+        else if (strcmp(token, "MANINBOX") == 0) {
+            cols->maninbox = count;
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                if (strcmp("Y", contents) == 0)
+                    labels[i].maninbox = true;
+                else
+                    labels[i].maninbox = false;
+            }
+        }
         else if (strcmp(token, "MANUFACTURER") == 0) {
             cols->manufacturer = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                labels[i].manufacturer = true;
+                if (strcmp("Y", contents) == 0)
+                    labels[i].manufacturer = true;
+                else
+                    labels[i].manufacturer = false;
             }
         }
         else if (strcmp(token, "MFGDATE") == 0) {
             cols->mfgdate = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                labels[i].mfgdate = true;
+                if (strcmp("Y", contents) == 0)
+                    labels[i].mfgdate = true;
+                else
+                    labels[i].mfgdate = false;
             }
         }
         else if (strcmp(token, "NORESTERILE") == 0) {
             cols->noresterile = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                labels[i].noresterilize = true;
+                if (strcmp("Y", contents) == 0)
+                    labels[i].noresterilize = true;
+                else
+                    labels[i].noresterilize = false;
             }
         }
         else if (strcmp(token, "PATENTSTA") == 0) {
@@ -471,6 +502,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                 strcpy(labels[i].sterilitytype, contents);
             }
         }
+        else if (strcmp(token, "STERILESTA") == 0) {
+            cols->sterilitystatement = count;
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strcpy(labels[i].sterilitystatement, contents);
+            }
+        }
         else if (strcmp(token, "TEMPLATENUMBER") == 0) {
             cols->templatenumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -487,13 +525,36 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                 else
                     labels[i].tfxlogo = false;
             }
+        }
+        else if (strcmp(token, "VERSION") == 0) {
+            cols->version = count;
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strcpy(labels[i].version, contents);
+            }
         } else {
             if (strlen(token) > 0)
                 printf("Ignoring column \"%s\"\n", token);
         }
-        
         count++;
         free(token);
     }
     return count;
 }
+
+/* int process_spreadsheet_row(char *buffer, Label_record *labels, Column_header *cols) {
+
+    int count = 0;
+    char tab_str = TAB;
+
+    while (strlen(buffer) > 0)
+    {
+
+        // Keep extracting tokens while the delimiter is present in buffer
+        char *token = get_token(buffer, tab_str);
+
+        count++;
+        free(token);
+    }
+    return 0;
+} */

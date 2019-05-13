@@ -20,6 +20,8 @@ extern char **spreadsheet;
 extern int spreadsheet_cap;
 extern int spreadsheet_row_number;
 
+
+typedef char *multi_tok_t;
 /**
 
 */
@@ -118,6 +120,7 @@ typedef struct {
     unsigned short logo5;
     unsigned short lotgraphic;
     unsigned short ltnumber;
+    unsigned short maninbox;
     unsigned short manufacturer;
     unsigned short material;
     unsigned short mfgdate;
@@ -134,10 +137,12 @@ typedef struct {
     unsigned short rxonly;
     unsigned short singleuse;
     unsigned short size;
+    unsigned short sterilitystatement;
     unsigned short sterilitytype;
     unsigned short tdline;
     unsigned short templatenumber;
     unsigned short tfxlogo;
+    unsigned short version;
 
 } Column_header;
 
@@ -168,5 +173,7 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str);
 int peek_nth_token(int n, const char *buffer, char delimiter);
 int spreadsheet_init();
 int spreadsheet_expand();
+
+char *multi_tok(char *input, char *delimiter);
 
 #endif
