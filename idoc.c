@@ -7,6 +7,7 @@
 #include "label.h"
 #define   CR '\r'
 #define   LF '\n'
+#define  FILE_EXT_LEN 10
 
 char **spreadsheet;
 int spreadsheet_cap = 0;
@@ -99,8 +100,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    char outputfile[256];
-    sscanf(argv[1], "%245[^.]%*[txt]", outputfile);
+    char *outputfile = (char *)malloc(strlen(argv[1]) + FILE_EXT_LEN);
+
+    sscanf(argv[1], "%[^.]%*[txt]", outputfile);
     strcat(outputfile, "_idoc.txt");
     printf("outputfile name is %s\n", outputfile);
 
@@ -111,6 +113,7 @@ int main(int argc, char *argv[]) {
     
     print_control_record(fpout);
     fclose(fpout);
+    free(outputfile);
 
     for (int i = 0; i < spreadsheet_row_number; i++)
         free(spreadsheet[i]);
