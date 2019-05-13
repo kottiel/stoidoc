@@ -99,13 +99,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    char outputfile[50];
-    sprintf(outputfile, "%s.txt", argv[1]);
-    printf("outputfile name is %s", outputfile);
-    
+    char outputfile[256];
+    sscanf(argv[1], "%245[^.]%*[txt]", outputfile);
+    strcat(outputfile, "_idoc.txt");
+    printf("outputfile name is %s\n", outputfile);
 
-    if ((fpout = fopen("idoc_output.txt", "w")) == NULL) {
-        printf("Could not open output file %s_idoc", outputfile);
+    if ((fpout = fopen(outputfile, "w")) == NULL)
+    {
+        printf("Could not open output file %s", outputfile);
     }
     
     print_control_record(fpout);
