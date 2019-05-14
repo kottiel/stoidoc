@@ -35,35 +35,43 @@ int sequence_number = 1;
     row / string. Rows containing just tab characters are ignored.
     @param fp points to the input file
 */
-void read_spreadsheet(FILE *fp) {
+void read_spreadsheet(FILE *fp)
+{
 
-  char c;
-  char buffer[MAX_COLUMNS];
-  bool line_not_empty = false;
-  int i = 0;
+    char c;
+    char buffer[MAX_COLUMNS];
+    bool line_not_empty = false;
+    int i = 0;
 
-  while ((c = fgetc(fp)) != EOF) {
-    if (c == CR) {
-      if ((c = fgetc(fp)) == LF) {
-        buffer[i] = '\0';
-        if (line_not_empty) {
-          if (spreadsheet_row_number >= spreadsheet_cap) {
-            spreadsheet_expand();
-          }
-          spreadsheet[spreadsheet_row_number] =
-              (char *)malloc(i * sizeof(char) + 2);
-          strcpy(spreadsheet[spreadsheet_row_number], buffer);
-          spreadsheet_row_number++;
+    while ((c = fgetc(fp)) != EOF)
+    {
+        if (c == CR)
+        {
+            if ((c = fgetc(fp)) == LF)
+            {
+                buffer[i] = '\0';
+                if (line_not_empty)
+                {
+                    if (spreadsheet_row_number >= spreadsheet_cap)
+                    {
+                        spreadsheet_expand();
+                    }
+                    spreadsheet[spreadsheet_row_number] =
+                        (char *)malloc(i * sizeof(char) + 2);
+                    strcpy(spreadsheet[spreadsheet_row_number], buffer);
+                    spreadsheet_row_number++;
+                }
+                i = 0;
+                line_not_empty = false;
+            }
         }
-        i = 0;
-        line_not_empty = false;
-      }
-    } else if ((c != CR) && (c != LF)) {
-      buffer[i++] = c;
-      if (c != '\t')
-        line_not_empty = true;
+        else if ((c != CR) && (c != LF))
+        {
+            buffer[i++] = c;
+            if (c != '\t')
+                line_not_empty = true;
+        }
     }
-  }
 }
 
 /**
@@ -71,42 +79,60 @@ void read_spreadsheet(FILE *fp) {
     @param fpout points to the output file
     @param n is the number of spaces to print
 */
-void print_spaces(FILE *fpout, int n) {
-  for (int i = 0; i < n; i++)
-    fprintf(fpout, " ");
+void print_spaces(FILE *fpout, int n)
+{
+    for (int i = 0; i < n; i++)
+        fprintf(fpout, " ");
+}
+
+/**
+    prints a specified number of spaces to a file stream
+    @param fpout points to the output file
+    @param n is the number of spaces to print
+*/
+void print_Z2BTLC01000(FILE *fpout)
+{
+    fprintf(fpout, "Z2BTLC01000");
+    print_spaces(fpout, 19);
+    fprintf(fpout, "500000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "1234567");
+    fprintf(fpout, "%06d", sequence_number++);
+    fprintf(fpout, "00000204");
 }
 
 /**
     prints the IDoc control record
     @param fpout points to the output file
 */
-int print_control_record(FILE *fpout) {
+int print_control_record(FILE *fpout)
+{
 
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
 
-  // line 1
-  fprintf(fpout, "EDI_DC40  500000000000");
-  // cols 22-29 - 7 digit control number?
-  fprintf(fpout, "1234567");
-  // BarTender ibtdoc release
-  fprintf(fpout, "740");
-  fprintf(fpout, " 3012  Z1BTDOC");
-  print_spaces(fpout, 53);
-  fprintf(fpout, "ZSC_BTEND");
-  print_spaces(fpout, 40);
-  fprintf(fpout, "SAPMEP    LS  MEPCLNT500");
-  print_spaces(fpout, 91);
-  fprintf(fpout, "I041      US  BARTENDER");
-  print_spaces(fpout, 92);
-  fprintf(fpout, "%d%02d%02d%02d%02d%02d", tm.tm_year + 1900, tm.tm_mon + 1,
-          tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-  print_spaces(fpout, 112);
-  fprintf(fpout, "Material_EN");
-  print_spaces(fpout, 9);
-  fprintf(fpout, "\r\n");
+    // line 1
+    fprintf(fpout, "EDI_DC40  500000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "1234567");
+    // BarTender ibtdoc release
+    fprintf(fpout, "740");
+    fprintf(fpout, " 3012  Z1BTDOC");
+    print_spaces(fpout, 53);
+    fprintf(fpout, "ZSC_BTEND");
+    print_spaces(fpout, 40);
+    fprintf(fpout, "SAPMEP    LS  MEPCLNT500");
+    print_spaces(fpout, 91);
+    fprintf(fpout, "I041      US  BARTENDER");
+    print_spaces(fpout, 92);
+    fprintf(fpout, "%d%02d%02d%02d%02d%02d", tm.tm_year + 1900, tm.tm_mon + 1,
+            tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    print_spaces(fpout, 112);
+    fprintf(fpout, "Material_EN");
+    print_spaces(fpout, 9);
+    fprintf(fpout, "\r\n");
 
-  return 0;
+    return 0;
 }
 
 /**
@@ -116,52 +142,104 @@ int print_control_record(FILE *fpout) {
     @param labels is the array of label records
     @param label_record is the label index we're accessing
 */
-void print_label_idoc_records(FILE *fpout, Label_record *labels, int record) {
+void print_label_idoc_records(FILE *fpout, Label_record *labels, int record)
+{
 
-  bool append = false;
-  // Print a given record
+    // Print a given record
 
-  // Material line
-  fprintf(fpout, "Z2BTMH01000");
-  print_spaces(fpout, 19);
-  fprintf(fpout, "500000000000");
-  // cols 22-29 - 7 digit control number?
-  fprintf(fpout, "1234567");
-  fprintf(fpout, "%06d", sequence_number++);
-  fprintf(fpout, "00000002");
-  fprintf(fpout, "%-18s", labels[record].material);
-  fprintf(fpout, "\r\n");
-
-  // Label record
-  fprintf(fpout, "Z2BTLH01000");
-  print_spaces(fpout, 19);
-  fprintf(fpout, "500000000000");
-  // cols 22-29 - 7 digit control number?
-  fprintf(fpout, "1234567");
-  fprintf(fpout, "%06d", sequence_number++);
-  fprintf(fpout, "00000103");
-  fprintf(fpout, "%-18s", labels[record].label);
-  fprintf(fpout, "\r\n");
-
-  // TDLine - repeat as many times as there are "##"
-  /* get the first token */
-
-  if (peek_nth_token(1, labels[record].tdline, '#') != -1)
-        append = true;
-  char *token = multi_tok(labels[record].tdline, "##");
-
-  int tdline_line_count = 0;
-
-  while (token != NULL) {
-    fprintf(fpout, "Z2BTTX01000");
+    // MATERIAL line
+    fprintf(fpout, "Z2BTMH01000");
     print_spaces(fpout, 19);
     fprintf(fpout, "500000000000");
     // cols 22-29 - 7 digit control number?
     fprintf(fpout, "1234567");
     fprintf(fpout, "%06d", sequence_number++);
-    fprintf(fpout, "00000204GRUNE  ENMATERIAL  ");
-    fprintf(fpout, "%s", labels[record].label);
-    print_spaces(fpout, 61);
+    fprintf(fpout, "00000002");
+    fprintf(fpout, "%-18s", labels[record].material);
+    fprintf(fpout, "\r\n");
+
+    // LABEL record
+    fprintf(fpout, "Z2BTLH01000");
+    print_spaces(fpout, 19);
+    fprintf(fpout, "500000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "1234567");
+    fprintf(fpout, "%06d", sequence_number++);
+    fprintf(fpout, "00000103");
+    fprintf(fpout, "%-18s", labels[record].label);
+    fprintf(fpout, "\r\n");
+
+    // TDLINE - repeat as many times as there are "##"
+    /* get the first token */
+    int tdline_count = 0;
+
+    char *token = labels[record].tdline;
+    while (strlen(token) > 0)
+    {
+        fprintf(fpout, "Z2BTTX01000");
+        print_spaces(fpout, 19);
+        fprintf(fpout, "500000000000");
+        // cols 22-29 - 7 digit control number?
+        fprintf(fpout, "1234567");
+        fprintf(fpout, "%06d", sequence_number++);
+        fprintf(fpout, "00000204GRUNE  ENMATERIAL  ");
+        fprintf(fpout, "%s", labels[record].label);
+        print_spaces(fpout, 61);
+
+        //check for and remove any leading...
+        if (token[0] == '\"')
+            memcpy(token, token + 1, strlen(token));
+
+        // ...and/or trailing quotes
+        if (token[strlen(token) - 1] == '\"')
+            token[strlen(token) - 1] = '\0';
+
+        // and convert instances of double quotes to single quotes
+        char *a = strstr(token, "\"\"");
+        if (a != NULL)
+        {
+            int diff = a - token;
+            memcpy(token + diff, token + diff + 1, strlen(token) - 2);
+        }
+
+        char *dpos = strstr(token, "##");
+
+        if (dpos != NULL) {
+            *dpos = '\0';
+            fprintf(fpout, "%s", token);
+            fprintf(fpout, "##");
+            print_spaces(fpout, 70 - strlen(token) - 2);
+            
+            // get the next segment of label record, after the "##"
+            token = dpos + strlen("##");
+        } else {
+            fprintf(fpout, "%-70s", token);
+            token[0] = '\0';
+        }
+        if (tdline_count == 0)
+            fprintf(fpout, "*");
+        else
+            fprintf(fpout, "/");
+        tdline_count++;
+        fprintf(fpout, "\r\n");
+    }
+
+    // TEMPLATENUMBER record
+    print_Z2BTLC01000(fpout);
+    fprintf(fpout, "%-30s", "TEMPLATENUMBER");
+    fprintf(fpout, "%-30s", labels[record].template);
+    fprintf(fpout, "%-255s", labels[record].template);
+    fprintf(fpout, "\r\n");
+
+    // REVISION record
+    print_Z2BTLC01000(fpout);
+    fprintf(fpout, "%-30s", "REVISION");
+    fprintf(fpout, "%-30s", labels[record].revision);
+    fprintf(fpout, "%-255s", labels[record].revision);
+    fprintf(fpout, "\r\n");
+
+    // SIZE record
+    token = labels[record].size;
 
     //check for and remove any leading...
     if (token[0] == '\"')
@@ -172,98 +250,99 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, int record) {
         token[strlen(token) - 1] = '\0';
 
     // and convert instances of double quotes to single quotes
-    char *a = strstr(token, "\"\"");
-    if (a != NULL) {
+/*     char *a = strstr(token, "\"\"");
+    if (a != NULL)
+    {
         int diff = a - token;
         memcpy(token + diff, token + diff + 1, strlen(token) - 2);
-    }
+    } */
 
-    if (append) {
-        fprintf(fpout, "%s", token);
-        fprintf(fpout, "##");
-        print_spaces(fpout, 70 - strlen(token) - 2);
-        append = false;
-    } else
-        fprintf(fpout, "%-70s", token);
-
-    if (tdline_line_count == 0)
-      fprintf(fpout, "*");
-    else
-      fprintf(fpout, "/");
-    tdline_line_count++;
+    print_Z2BTLC01000(fpout);
+    fprintf(fpout, "%-30s", "SIZE");
+    fprintf(fpout, "%-30s", labels[record].size);
+    fprintf(fpout, "%-255s", labels[record].size);
     fprintf(fpout, "\r\n");
 
-  if (peek_nth_token(1 + tdline_line_count, labels[record].tdline, '#') != -1)
-        append = true;
-    token = multi_tok(NULL, "##");
-  }
+    // LEVEL record
+    print_Z2BTLC01000(fpout);
+    fprintf(fpout, "%-30s", "LEVEL");
+    fprintf(fpout, "%-30s", labels[record].level);
+    fprintf(fpout, "%-255s", labels[record].level);
+    fprintf(fpout, "\r\n");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
-  // the Column_header struct that contains all spreadsheet col labels
-  Column_header columns;
+    // the Column_header struct that contains all spreadsheet col labels
+    Column_header columns;
 
-  // the Label_record array
-  Label_record *labels;
+    // the Label_record array
+    Label_record *labels;
 
-  if (spreadsheet_init() != 0) {
-    printf("Could not initialize spreadsheet array. Exiting\n");
-    return EXIT_FAILURE;
-  }
+    if (spreadsheet_init() != 0)
+    {
+        printf("Could not initialize spreadsheet array. Exiting\n");
+        return EXIT_FAILURE;
+    }
 
-  FILE *fp, *fpout;
+    FILE *fp, *fpout;
 
-  if (argc != 2) {
-    printf("usage: ./idoc filename.txt\n");
-    return EXIT_FAILURE;
-  }
+    if (argc != 2)
+    {
+        printf("usage: ./idoc filename.txt\n");
+        return EXIT_FAILURE;
+    }
 
-  if ((fp = fopen(argv[1], "r")) == NULL) {
-    printf("File not found.\n");
-    return EXIT_FAILURE;
-  } else {
-    read_spreadsheet(fp);
-  }
-  fclose(fp);
+    if ((fp = fopen(argv[1], "r")) == NULL)
+    {
+        printf("File not found.\n");
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        read_spreadsheet(fp);
+    }
+    fclose(fp);
 
-  labels =
-      (Label_record *)malloc(spreadsheet_row_number * sizeof(Label_record));
+    labels =
+        (Label_record *)malloc(spreadsheet_row_number * sizeof(Label_record));
 
-  if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
-    printf("Program quitting.\n");
-    return EXIT_FAILURE;
-  }
+    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1)
+    {
+        printf("Program quitting.\n");
+        return EXIT_FAILURE;
+    }
 
-  char *outputfile = (char *)malloc(strlen(argv[1]) + FILE_EXT_LEN);
+    char *outputfile = (char *)malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
-  sscanf(argv[1], "%[^.]%*[txt]", outputfile);
-  strcat(outputfile, "_IDOC.txt");
-  printf("outputfile name is %s\n", outputfile);
+    sscanf(argv[1], "%[^.]%*[txt]", outputfile);
+    strcat(outputfile, "_IDOC.txt");
+    printf("outputfile name is %s\n", outputfile);
 
-  if ((fpout = fopen(outputfile, "w")) == NULL) {
-    printf("Could not open output file %s", outputfile);
-  }
+    if ((fpout = fopen(outputfile, "w")) == NULL)
+    {
+        printf("Could not open output file %s", outputfile);
+    }
 
-  if (print_control_record(fpout) != 0)
-    return EXIT_FAILURE;
+    if (print_control_record(fpout) != 0)
+        return EXIT_FAILURE;
 
-  print_label_idoc_records(fpout, labels, 1);
-  /*     for (int i = 1; i < spreadsheet_row_number; i++) {
+    for (int i = 1; i < 3; i++) { //spreadsheet_row_number; i++) {
           print_label_idoc_records(fpout, labels, i);
-      } */
+      }
 
-  fclose(fpout);
-  free(outputfile);
+    fclose(fpout);
+    free(outputfile);
 
-  for (int i = 0; i < spreadsheet_row_number; i++)
-    free(spreadsheet[i]);
-  free(spreadsheet);
+    for (int i = 0; i < spreadsheet_row_number; i++)
+        free(spreadsheet[i]);
+    free(spreadsheet);
 
-  for (int i = 1; i < spreadsheet_row_number; i++)
-    free(labels[i].tdline);
+    /* for (int i = 1; i < spreadsheet_row_number; i++)
+        free(labels[i].tdline); */
 
-  free(labels);
+    free(labels);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
