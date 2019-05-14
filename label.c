@@ -541,20 +541,3 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
     }
     return count;
 }
-
-/* int process_spreadsheet_row(char *buffer, Label_record *labels, Column_header *cols) {
-
-    int count = 0;
-    char tab_str = TAB;
-
-    while (strlen(buffer) > 0)
-    {
-
-        // Keep extracting tokens while the delimiter is present in buffer
-        char *token = get_token(buffer, tab_str);
-
-        count++;
-        free(token);
-    }
-    return 0;
-} */
