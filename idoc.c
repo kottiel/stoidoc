@@ -118,6 +118,7 @@ int print_control_record(FILE *fpout) {
 */
 void print_label_idoc_records(FILE *fpout, Label_record *labels, int record) {
 
+  bool append = false;
   // Print a given record
 
   // Material line
@@ -144,7 +145,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, int record) {
 
   // TDLine - repeat as many times as there are "##"
   /* get the first token */
+
+  if (peek_nth_token(1, labels[record].tdline, '#') != -1)
+        append = true;
   char *token = multi_tok(labels[record].tdline, "##");
+
   int tdline_line_count = 0;
 
   while (token != NULL) {
@@ -157,13 +162,39 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, int record) {
     fprintf(fpout, "00000204GRUNE  ENMATERIAL  ");
     fprintf(fpout, "%s", labels[record].label);
     print_spaces(fpout, 61);
-    fprintf(fpout, "%-70s", token);
+
+    //check for and remove any leading...
+    if (token[0] == '\"')
+        memcpy(token, token + 1, strlen(token));
+
+    // ...and/or trailing quotes
+    if (token[strlen(token) - 1] == '\"')
+        token[strlen(token) - 1] = '\0';
+
+    // and convert instances of double quotes to single quotes
+    char *a = strstr(token, "\"\"");
+    if (a != NULL) {
+        int diff = a - token;
+        memcpy(token + diff, token + diff + 1, strlen(token) - 2);
+    }
+
+    if (append) {
+        fprintf(fpout, "%s", token);
+        fprintf(fpout, "##");
+        print_spaces(fpout, 70 - strlen(token) - 2);
+        append = false;
+    } else
+        fprintf(fpout, "%-70s", token);
+
     if (tdline_line_count == 0)
       fprintf(fpout, "*");
     else
       fprintf(fpout, "/");
     tdline_line_count++;
     fprintf(fpout, "\r\n");
+
+  if (peek_nth_token(1 + tdline_line_count, labels[record].tdline, '#') != -1)
+        append = true;
     token = multi_tok(NULL, "##");
   }
 }
