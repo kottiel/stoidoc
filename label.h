@@ -85,7 +85,7 @@ typedef struct {
   bool    serialnumber;
   bool    sizelogo;
   bool    rxonly;
-  bool    singlepatienuse;
+  bool    singlepatientuse;
   bool    singleuseonly;
   bool    tfxlogo;
 } Label_record;
@@ -136,6 +136,7 @@ typedef struct {
     unsigned short revision;
     unsigned short rxonly;
     unsigned short singleuse;
+    unsigned short singlepatientuse;
     unsigned short size;
     unsigned short sterilitystatement;
     unsigned short sterilitytype;

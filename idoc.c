@@ -304,7 +304,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // BARCODETEXT record (optional)
-    if ((cols->barcodetext) && (strlen(labels[record].barcodetext) > 0)) {
+    if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0)) {
         print_Z2BTLC01000(fpout);
         fprintf(fpout, "%-30s", "BARCODETEXT");
         fprintf(fpout, "%-30s", labels[record].gtin);
@@ -313,7 +313,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // LTNUMBER record (optional)
-    if ((cols->ltnumber) && (strlen(labels[record].ltnumber) > 0))) {
+    if ((cols->ltnumber) && (strlen(labels[record].ipn) > 0)) {
         print_Z2BTLC01000(fpout);
         fprintf(fpout, "%-30s", "LTNUMBER");
         fprintf(fpout, "%-30s", labels[record].ipn);
@@ -322,7 +322,22 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // GRAPHIC01 - GRAPHIC08 Fields (optional)
-
+    int g_cnt = 1;
+    char g_cnt_str[03];
+    char graphic[] = "GRAPHIC";
+    // SINGLEPATIENTUSE record (optional)
+    if (cols->singlepatientuse) {
+        
+        if (labels[record].singlepatientuse) {
+            print_Z2BTLC01000(fpout);
+            sprintf(g_cnt_str, "%02d", g_cnt++);
+            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
+            fprintf(fpout, "\r\n");
+        }
+        
+    }
     // ECREP record (optional)
     if (cols->ltnumber) {
         print_Z2BTLC01000(fpout);
@@ -422,7 +437,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // ADDRESS record (optional)
-    if ((cols->address) && (strlen(labels[record].record) > 0)) {
+    if ((cols->address) && (strlen(labels[record].address) > 0)) {
         print_Z2BTLC01000(fpout);
         fprintf(fpout, "%-30s", "ADDRESS");
         fprintf(fpout, "%-30s", labels[record].address);

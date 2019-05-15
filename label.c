@@ -586,6 +586,18 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                     labels[i].singleuseonly = false;
             }
         }
+        else if (strcmp(token, "SINGLEPATIENTUSE") == 0)
+        {
+            cols->singlepatientuse = count;
+            for (int i = 1; i < spreadsheet_row_number; i++)
+            {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                if (strcmp("Y", contents) == 0)
+                    labels[i].singlepatientuse = true;
+                else
+                    labels[i].singlepatientuse = false;
+            }
+        }
         else if (strcmp(token, "SIZE") == 0)
         {
             cols->size = count;
