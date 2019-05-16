@@ -463,6 +463,18 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                     labels[i].noresterilize = false;
             }
         }
+        else if (strcmp(token, "NONSTERILE") == 0)
+        {
+            cols->nonsterile = count;
+            for (int i = 1; i < spreadsheet_row_number; i++)
+            {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                if (strcmp("Y", contents) == 0)
+                    labels[i].nonsterile = true;
+                else
+                    labels[i].nonsterile = false;
+            }
+        }
         else if (strcmp(token, "PATENTSTA") == 0)
         {
             cols->patentstatement = count;

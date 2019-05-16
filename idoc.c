@@ -321,10 +321,14 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "\r\n");
     }
 
+    //
     // GRAPHIC01 - GRAPHIC08 Fields (optional)
+    //
+
     int g_cnt = 1;
     char g_cnt_str[03];
     char graphic[] = "GRAPHIC";
+
     // SINGLEPATIENTUSE record (optional)
     if (cols->singlepatientuse) {
         
@@ -333,11 +337,72 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             sprintf(g_cnt_str, "%02d", g_cnt++);
             fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
             fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
+            print_graphic_path(fpout, "SinglePatienUse.tif");
             fprintf(fpout, "\r\n");
         }
         
     }
+
+    // CAUTION record (optional)
+    if (cols->caution)
+    {
+
+        if (labels[record].caution)
+        {
+            print_Z2BTLC01000(fpout);
+            sprintf(g_cnt_str, "%02d", g_cnt++);
+            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "Caution.tif");
+            fprintf(fpout, "\r\n");
+        }
+    }
+
+    // ConsultIFU record (optional)
+    if (cols->consultifu)
+    {
+
+        if (labels[record].consultifu)
+        {
+            print_Z2BTLC01000(fpout);
+            sprintf(g_cnt_str, "%02d", g_cnt++);
+            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "ConsultIFU.tif");
+            fprintf(fpout, "\r\n");
+        }
+    }
+
+    // DoNotUsePakDam record (optional)
+    if (cols->donotusedam)
+    {
+
+        if (labels[record].donotusedamaged)
+        {
+            print_Z2BTLC01000(fpout);
+            sprintf(g_cnt_str, "%02d", g_cnt++);
+            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "DoNotUsePakDam.tif");
+            fprintf(fpout, "\r\n");
+        }
+    }
+
+    // Non-sterile record (optional)
+    if (cols->nonsterile)
+    {
+
+        if (labels[record].nonsterile)
+        {
+            print_Z2BTLC01000(fpout);
+            sprintf(g_cnt_str, "%02d", g_cnt++);
+            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "Non-sterile.tif");
+            fprintf(fpout, "\r\n");
+        }
+    }
+
     // ECREP record (optional)
     if (cols->ltnumber) {
         print_Z2BTLC01000(fpout);

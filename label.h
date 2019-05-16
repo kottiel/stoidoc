@@ -124,6 +124,7 @@ typedef struct {
     unsigned short manufacturer;
     unsigned short material;
     unsigned short mfgdate;
+    unsigned short nonsterile;
     unsigned short noresterile;
     unsigned short patentstatement;
     unsigned short phtdehp;
