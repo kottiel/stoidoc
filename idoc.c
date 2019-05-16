@@ -675,9 +675,11 @@ int main(int argc, char *argv[]) {
     printf("outputfile name is %s\n", outputfile);
 
     // check for optional control_number from command line
-    char ctrl_num[8] = "1234567";
-    if ((strcmp(argv[2], "-cn") == 0)) {        
-        strcpy(ctrl_num, argv[3]);
+    char ctrl_num[8] = "2541435";
+    if (argc > 2) {
+        if  ((argv[2] != NULL) && (strcmp(argv[2], "-cn") == 0)) {
+            strcpy(ctrl_num, argv[3]);
+        }
     }
 
     if ((fpout = fopen(outputfile, "w")) == NULL)
@@ -695,8 +697,8 @@ int main(int argc, char *argv[]) {
     fclose(fpout);
     free(outputfile);
 
-    for (int i = 0; i < spreadsheet_row_number; i++)
-        free(spreadsheet[i]);
+/*     for (int i = 0; i < spreadsheet_row_number; i++)
+        free(spreadsheet[i]); */
     free(spreadsheet);
 
     /* for (int i = 1; i < spreadsheet_row_number; i++)

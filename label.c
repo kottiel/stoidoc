@@ -133,6 +133,9 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str)
     strncpy(contents, spreadsheet[i] + start, length);
     contents[length] = '\0';
 
+    //characteristic_lookup(contents);
+    //strcpy(contents, "kottiel");
+
     return 0;
 }
 
@@ -220,9 +223,20 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
         else if (strcmp(token, "CE0120") == 0)
         {
             cols->ce0120 = count;
-            for (int i = 1; i < spreadsheet_row_number; i++)
-            {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
+
+                char CE[][2][20] = {
+                        {"CE", "CE Mark"},
+                        {"CE0120", "CE_0120_Below"},
+                        {"CE0123", "CE123"},
+                        {"CE0050", "CE0050"}
+                       };
+
+                for (unsigned int i = 0; i < sizeof(CE)/sizeof(CE[0]); i++)
+                    if (strcmp(CE[i][0], contents) == 0)
+                        strcpy(contents, CE[i][1]);
+
                 strcpy(labels[i].cemark, contents);
             }
         }
