@@ -13,6 +13,8 @@
 #define INITIAL_CAP             3
 #define SPREADSHEET_INIT_SIZE   3
 #define MAX_COLUMNS          1000
+#define MED                    21
+#define LRG                    41
 #define TAB                  '\t'
 
 /** global variable spreadsheet that holds the label records  */
@@ -26,29 +28,29 @@ typedef char *multi_tok_t;
 
 */
 typedef struct {
-  char   material[41];
-  char   address[21];
-  char   cautionstatement[21];
-  char   cemark[21];
-  char   coostate[21];
-  char   distby[21];
-  char   ecrepaddress[21];
-  char   flgraphic[21];
-  char   insertgraphic[21];
-  char   labelgraph1[21];
-  char   labelgraph2[21];
-  char   latexstatement[21];
-  char   logo1[21];
-  char   logo2[21];
-  char   logo3[21];
-  char   logo4[21];
-  char   logo5[21];
-  char   patentstatement[21];
-  char   size[21];
-  char   sterilitystatement[21];
-  char   sterilitytype[21];
-  char   temperaturerange[21];
-  char   version[21];
+  char   material[LRG];
+  char   address[MED];
+  char   cautionstatement[MED];
+  char   cemark[MED];
+  char   coostate[MED];
+  char   distby[MED];
+  char   ecrepaddress[MED];
+  char   flgraphic[MED];
+  char   insertgraphic[MED];
+  char   labelgraph1[MED];
+  char   labelgraph2[MED];
+  char   latexstatement[MED];
+  char   logo1[MED];
+  char   logo2[MED];
+  char   logo3[MED];
+  char   logo4[MED];
+  char   logo5[MED];
+  char   patentstatement[MED];
+  char   size[MED];
+  char   sterilitystatement[MED];
+  char   sterilitytype[MED];
+  char   temperaturerange[MED];
+  char   version[MED];
   char   gtin[15];
   char   level[11];
   char   label[10];

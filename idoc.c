@@ -162,6 +162,9 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Print the records for a given IDOC (labels[record])
 
+
+    char graphic_name[MED];
+
     // MATERIAL record (optional)
     if ((cols->material) && (strlen(labels[record].material) > 0)) {
         fprintf(fpout, "Z2BTMH01000");
@@ -436,6 +439,58 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             }
         }
 
+    // ADDRESS record (optional)
+    if ((cols->address) && (strlen(labels[record].address) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "ADDRESS");
+        fprintf(fpout, "%-30s", labels[record].address);
+        print_graphic_path(fpout, strcat(labels[record].address, ".tif"));
+        fprintf(fpout, "\r\n");
+    }
+
+
+    // CEMARK record (optional)
+    if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "CE0120");
+
+        // SAP Characteristic Value Lookup
+    char lookup[][2][MED] = {
+                        {"CE", "CE Mark"},
+                        {"CE0120", "CE_0120_Below"},
+                        {"CE0123", "CE123"},
+                        {"CE0050", "CE0050"}
+                       };
+
+    for (unsigned int i = 0; i < sizeof(lookup)/sizeof(lookup[0]); i++) {
+        if (strcmp(lookup[i][0], labels[record].cemark) == 0)
+            strcpy(graphic_name, lookup[i][0]);
+        else
+            strcpy(graphic_name, labels[record].cemark);       
+    }        
+        fprintf(fpout, "%-30s", labels[record].cemark);
+        print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        fprintf(fpout, "\r\n");
+    }
+
+    // COOSTATE record (optional)
+    if ((cols->coostate) && (strlen(labels[record].coostate) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "COOSTATE");
+        fprintf(fpout, "%-30s", labels[record].coostate);
+        print_graphic_path(fpout, strcat(labels[record].coostate, ".tif"));
+        fprintf(fpout, "\r\n");
+    }
+
+    // ECREPADDRESS record (optional)
+    if ((cols->ecrepaddress) && (strlen(labels[record].ecrepaddress) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "ECREPADDRESS");
+        fprintf(fpout, "%-30s", labels[record].ecrepaddress);
+        print_graphic_path(fpout, strcat(labels[record].ecrepaddress, ".tif"));
+        fprintf(fpout, "\r\n");
+    }
+
     // ECREP record (optional)
     if (cols->ltnumber) {
         print_Z2BTLC01000(fpout, ctrl_num);
@@ -531,42 +586,6 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
-    }
-
-    // ADDRESS record (optional)
-    if ((cols->address) && (strlen(labels[record].address) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "ADDRESS");
-        fprintf(fpout, "%-30s", labels[record].address);
-        print_graphic_path(fpout, strcat(labels[record].address, ".tif"));
-        fprintf(fpout, "\r\n");
-    }
-
-    // CEMARK record (optional)
-    if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "CEMARK");
-        fprintf(fpout, "%-30s", labels[record].cemark);
-        print_graphic_path(fpout, strcat(labels[record].cemark, ".tif"));
-        fprintf(fpout, "\r\n");
-    }
-
-    // COOSTATE record (optional)
-    if ((cols->coostate) && (strlen(labels[record].coostate) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "COOSTATE");
-        fprintf(fpout, "%-30s", labels[record].coostate);
-        print_graphic_path(fpout, strcat(labels[record].coostate, ".tif"));
-        fprintf(fpout, "\r\n");
-    }
-
-    // ECREPADDRESS record (optional)
-    if ((cols->ecrepaddress) && (strlen(labels[record].ecrepaddress) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "ECREPADDRESS");
-        fprintf(fpout, "%-30s", labels[record].ecrepaddress);
-        print_graphic_path(fpout, strcat(labels[record].ecrepaddress, ".tif"));
         fprintf(fpout, "\r\n");
     }
 
