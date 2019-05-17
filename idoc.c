@@ -31,6 +31,59 @@ int spreadsheet_row_number = 0;
 /* global variable to track the idoc sequence number                     */
 int sequence_number = 1;
 
+// Alphabetized SAP Characteristic Value Lookup
+    char lookup[][2][LRG] = {
+                        {"CE",     "CE Mark"      },
+                        {"CE0120", "CE_0120_Below"},
+                        {"CE0123", "CE123"        },
+                        {"CE0050", "CE0050"       },
+                        {"NO",     "blank-01"     },
+                        {"N",      "blank-01"     }
+                       };
+
+    int lookupsize = sizeof(lookup)/sizeof(lookup[0]);
+
+/**
+    perform a binary search on the lookup array to find the SAP
+    characteristic definition given the characteristic value
+*/
+char *sap_lookup(char *needle) {
+
+    int start = 0;
+    int end   = lookupsize - 1;
+    int middle;    
+    
+    bool exit = false;
+    char *haystack = lookup[0][0];
+    char needle[LRG];
+    char *lp;
+
+    while (!found) {
+        middle = ((end - start) / 2) + start;
+        lp = strcmp(lookup[i][middle]);
+        if (strcmp(needle, lp) == 0)
+            return lookup[i][1];
+        else if (strcmp(needle, lp) < 0) {
+            end = middle - 1;
+        }
+        else {
+            start = middle + 1;
+        }
+    }
+}
+    /***************************
+    for (unsigned int i = 0; i < lookupsize; i++) {
+        if (strcmp(lookup[i][0], labels[record].cemark) == 0)
+            strcpy(graphic_name, lookup[i][0]);
+        else
+            strcpy(graphic_name, labels[record].cemark);
+    }
+    *///*************************
+
+}
+
+
+
 /**
     reads a tab-delimited Excel spreadsheet into memory, dynamically
     allocating memory to hold the rows as needed. All CRLF and LF are
@@ -162,18 +215,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Print the records for a given IDOC (labels[record])
 
-    // Alphabetized SAP Characteristic Value Lookup
-    char lookup[][2][MED] = {
-                        {"CE",     "CE Mark"      },
-                        {"CE0120", "CE_0120_Below"},
-                        {"CE0123", "CE123"        },
-                        {"CE0050", "CE0050"       },
-                        {"NO",     "blank-01"     },
-                        {"N",      "blank-01"     }
-                       };
-
-    int lookupsize = sizeof(lookup)/sizeof(lookup[0]);
-
+    // the name of the graphic to be appended to the graphic path
     char graphic_name[MED];
 
     // MATERIAL record (optional)
@@ -561,14 +603,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "CE0120");
-
-    for (unsigned int i = 0; i < lookupsize; i++) {
-        if (strcmp(lookup[i][0], labels[record].cemark) == 0)
-            strcpy(graphic_name, lookup[i][0]);
-        else
-            strcpy(graphic_name, labels[record].cemark);
-    }
     fprintf(fpout, "%-30s", labels[record].cemark);
+
+    // graphic_name will be converted to its SAP lookup value from
+    // the static lookup array
+    graphic_name = sap_lookup(labels[record].cemark);
     print_graphic_path(fpout, strcat(graphic_name, ".tif"));
     fprintf(fpout, "\r\n");
     }

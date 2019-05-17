@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 int compare(char *s, char *t) {
     return strcmp(s, t);
@@ -8,17 +9,52 @@ int compare(char *s, char *t) {
 int main() {
 
 
-    char CE[][2][40] = {
-                        {"CE", "CE Mark"},
-                        {"CE0120", "CE_0120_Below"},
-                        {"CE0123", "CE123"},
-                        {"CE0050", "CE0050"}
+    char lookup[][2][40] = {
+                        {"apple", "pie"},
+                        {"banana", "pudding"},
+                        {"cherry", "cobbler"},
+                        {"date", "shake"},
+                        {"egg", "souffle"},
+                        {"fig", "tree"},
+                        {"goat", "cheese"},
+                        {"ham", "bones"}
                        };
 
-    for (unsigned int i = 0; i < sizeof(CE)/sizeof(CE[0]); i++) {
-        if (strcmp(CE[i][0], "CE0123") == 0)
-            printf("found at position %d\n", i);
+    int start = 0;
+    int end   = 8 - 1;
+    int middle;
+    bool exit = false;
+    int i = 0;
+    char *haystack = lookup[0][0];
+    //char needle[20];
+    //scanf("%19s", needle);
+    char needle[] = "almond";
+
+    while (!exit) {
+        if (middle != (end - start) / 2 + start)
+            middle =  (end - start) / 2 + start;
+        else
+            exit = true;
+
+        printf("middle: %d\n", middle);
+        haystack = lookup[middle][0];
+        if (strcmp(needle, haystack) == 0) {
+            printf("%s-%s\n", haystack, lookup[middle][1]);
+            exit = true;
+        }
+        else if (strcmp(needle, haystack) < 0) {
+            end = middle - 1;
+        }
+        else {
+            start = middle + 1;
+        }
+        i++;
+        if (i > 20)
+            exit = true;
     }
+
+    if (i > 10)
+        printf("i is %d...it didn't work\n", i);
 
 
     return 0;
