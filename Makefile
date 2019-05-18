@@ -4,7 +4,7 @@ CC = gcc
 # extra options we want the default compile rule to use.
 CFLAGS = -Wall -Wextra -std=c99 -g -O3
 
-# The libraries to link with.
+# The libraries to link with. Updated comment
 # LDLIBS = -lm
 
 # Our main executable depends on idoc.o (implicit) and label.o
