@@ -2,7 +2,7 @@
 CC = gcc
 
 # extra options we want the default compile rule to use.
-CFLAGS = -Wall -std=c99 -g
+CFLAGS = -Wall -Wextra -std=c99 -g -O3
 
 # The libraries to link with.
 # LDLIBS = -lm
