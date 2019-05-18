@@ -33,13 +33,20 @@ int sequence_number = 1;
 
 // Alphabetized SAP Characteristic Value Lookup
     char lookup[][2][LRG] = {
-                        {"CE",     "CE Mark"      },
-                        {"CE0120", "CE_0120_Below"},
-                        {"CE0123", "CE123"        },
-                        {"CE0050", "CE0050"       },
-                        {"NO",     "blank-01"     },
-                        {"N",      "blank-01"     }
+                        {"CE",          "CE Mark"         },
+                        {"CE0120",      "CE_0120_Below"   },
+                        {"CE0123",      "CE123"           },
+                        {"CE0050",      "CE0050"          },
+                        {"HEMO_AUTO_L", "HemoAutoL"       },
+                        {"HEMO_L",      "HemolokL"        },
+                        {"HEMO_ML",     "HemolokML"       },
+                        {"HMOCLPTRD",   "HmoclpTrd"       },
+                        {"NO",          "blank-01"        },
+                        {"N",           "blank-01"        },
+                        {"STERILEEO",   "Sterile_EO"      },
+                        {"WECK_LOGO",   "Wecklogo"        }
                        };
+
 
     int lookupsize = sizeof(lookup)/sizeof(lookup[0]);
 
@@ -51,38 +58,29 @@ char *sap_lookup(char *needle) {
 
     int start = 0;
     int end   = lookupsize - 1;
-    int middle;    
-    
+    int middle;
+
     bool exit = false;
     char *haystack = lookup[0][0];
-    char needle[LRG];
-    char *lp;
 
-    while (!found) {
-        middle = ((end - start) / 2) + start;
-        lp = strcmp(lookup[i][middle]);
-        if (strcmp(needle, lp) == 0)
-            return lookup[i][1];
-        else if (strcmp(needle, lp) < 0) {
+    while (!exit) {
+        if (middle != (end - start) / 2 + start)
+            middle =  (end - start) / 2 + start;
+        else
+            exit = true;
+        haystack = lookup[middle][0];
+        if (strcmp(needle, haystack) == 0) {
+            return lookup[middle][1];
+        }
+        else if (strcmp(needle, haystack) < 0) {
             end = middle - 1;
         }
         else {
             start = middle + 1;
         }
     }
+    return NULL;
 }
-    /***************************
-    for (unsigned int i = 0; i < lookupsize; i++) {
-        if (strcmp(lookup[i][0], labels[record].cemark) == 0)
-            strcpy(graphic_name, lookup[i][0]);
-        else
-            strcpy(graphic_name, labels[record].cemark);
-    }
-    *///*************************
-
-}
-
-
 
 /**
     reads a tab-delimited Excel spreadsheet into memory, dynamically
@@ -217,6 +215,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // the name of the graphic to be appended to the graphic path
     char graphic_name[MED];
+    char *gnp;
 
     // MATERIAL record (optional)
     if ((cols->material) && (strlen(labels[record].material) > 0)) {
@@ -271,8 +270,8 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             char *a = strstr(token, "\"\"");
             if (a != NULL)
             {
-                int diff = a - token;
-                memcpy(token + diff, token + diff + 1, strlen(token) - 2);
+                memcpy(a, a+1, strlen(a));
+                token[strlen(token)] = '\0';
             }
 
             char *dpos = strstr(token, "##");
@@ -603,13 +602,16 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "CE0120");
-    fprintf(fpout, "%-30s", labels[record].cemark);
+        fprintf(fpout, "%-30s", labels[record].cemark);
 
-    // graphic_name will be converted to its SAP lookup value from
-    // the static lookup array
-    graphic_name = sap_lookup(labels[record].cemark);
-    print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-    fprintf(fpout, "\r\n");
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+
+        if (strcpy(graphic_name, sap_lookup(labels[record].cemark)) != NULL)
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        else
+            print_graphic_path(fpout, strcat(labels[record].cemark, ".tif"));
+        fprintf(fpout, "\r\n");
     }
 
     // COOSTATE record (optional)
@@ -630,14 +632,18 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "\r\n");
     }
 
-
-
     // LOGO1 record (optional)
     if ((cols->logo1) && (strlen(labels[record].logo1) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "LOGO1");
         fprintf(fpout, "%-30s", labels[record].logo1);
-        print_graphic_path(fpout, strcat(labels[record].logo1, ".tif"));
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        if (strcpy(graphic_name, sap_lookup(labels[record].logo1)) != NULL)
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        else
+            print_graphic_path(fpout, strcat(labels[record].logo1, ".tif"));
         fprintf(fpout, "\r\n");
     }
 
@@ -683,7 +689,25 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "STERILITYTYPE");
         fprintf(fpout, "%-30s", labels[record].sterilitytype);
-        print_graphic_path(fpout, strcat(labels[record].sterilitytype, ".tif"));
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].sterilitytype);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].sterilitytype, ".tif"));
+        }
+        fprintf(fpout, "\r\n");
+    }
+
+    // BOMLEVEL record (optional)
+    if ((cols->bomlevel) && (strlen(labels[record].bomlevel) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "BOMLEVEL");
+        fprintf(fpout, "%-30s", labels[record].bomlevel);
+        print_graphic_path(fpout, strcat(labels[record].bomlevel, ".tif"));
         fprintf(fpout, "\r\n");
     }
 }

@@ -199,6 +199,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                 strcpy(labels[i].gtin, contents);
             }
         }
+        else if (strcmp(token, "BOMLEVEL") == 0)
+        {
+            cols->bomlevel = count;
+            for (int i = 1; i < spreadsheet_row_number; i++)
+            {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strcpy(labels[i].bomlevel, contents);
+            }
+        }
         else if (strcmp(token, "CAUTION") == 0)
         {
             cols->caution = count;
@@ -225,18 +234,6 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
             cols->ce0120 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-
-                char CE[][2][20] = {
-                        {"CE", "CE Mark"},
-                        {"CE0120", "CE_0120_Below"},
-                        {"CE0123", "CE123"},
-                        {"CE0050", "CE0050"}
-                       };
-
-                for (unsigned int i = 0; i < sizeof(CE)/sizeof(CE[0]); i++)
-                    if (strcmp(CE[i][0], contents) == 0)
-                        strcpy(contents, CE[i][1]);
-
                 strcpy(labels[i].cemark, contents);
             }
         }
