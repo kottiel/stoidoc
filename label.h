@@ -30,6 +30,7 @@ typedef char *multi_tok_t;
 typedef struct {
   char   material[LRG];
   char   address[MED];
+  char   barcode1[MED];  
   char   cautionstatement[MED];
   char   cemark[MED];
   char   coostate[MED];
@@ -98,6 +99,7 @@ typedef struct {
 typedef struct {
     unsigned short address;
     unsigned short barcodetext;
+    unsigned short barcode1;
     unsigned short bomlevel;
     unsigned short caution;
     unsigned short cautionstate;

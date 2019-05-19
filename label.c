@@ -190,6 +190,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols)
                 strcpy(labels[i].address, contents);
             }
         }
+        else if (strcmp(token, "BARCODE1") == 0)
+        {
+            cols->barcode1 = count;
+            for (int i = 1; i < spreadsheet_row_number; i++)
+            {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strcpy(labels[i].barcode1, contents);
+            }
+        }        
         else if (strcmp(token, "BARCODETEXT") == 0)
         {
             cols->barcodetext = count;

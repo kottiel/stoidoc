@@ -386,22 +386,18 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // SINGLEPATIENTUSE record (optional)
     if (cols->singlepatientuse) {
-
         if (labels[record].singlepatientuse) {
             print_Z2BTLC01000(fpout, ctrl_num);
             sprintf(g_cnt_str, "%02d", g_cnt++);
             fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
             fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "SinglePatienUse.tif");
+            print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
             fprintf(fpout, "\r\n");
         }
-
     }
 
     // CAUTION record (optional)
-    if (cols->caution)
-    {
-
+    if (cols->caution) {
         if (labels[record].caution)
         {
             print_Z2BTLC01000(fpout, ctrl_num);
@@ -433,7 +429,6 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     // DoNotUsePakDam record (optional)
     if (cols->donotusedam)
     {
-
         if (labels[record].donotusedamaged)
         {
             print_Z2BTLC01000(fpout, ctrl_num);
@@ -486,13 +481,13 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
                 strcpy(graphic, "GRAPHIC");
                 fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
                 fprintf(fpout, "%-30s", "Y");
-                print_graphic_path(fpout, "singleuse.tif");
+                print_graphic_path(fpout, "SINGLEUSE.tif");
                 fprintf(fpout, "\r\n");
             }
         }
 
     // ECREP record (optional)
-    if (cols->ltnumber) {
+    if (cols->ecrep) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "ECREP");
         if (labels[record].ecrep) {
@@ -547,6 +542,34 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "\r\n");
     }
 
+    // MFGDATE record (optional)
+    if (cols->mfgdate) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "MFGDATE");
+        if (labels[record].mfgdate) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "DateofManufacture.tif");
+        }else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\r\n");
+    }
+
+    // PHTDEHP record (optional)
+    if (cols->phtdehp) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "PHTDEHP");
+        if (labels[record].phtdehp) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "PHT-DEHP.tif");
+        }else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\r\n");
+    }    
+
     // REFNUMBER record (optional)
     if (cols->refnumber) {
         print_Z2BTLC01000(fpout, ctrl_num);
@@ -598,6 +621,31 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "\r\n");
     }
 
+    // BARCODE1 record (optional)
+    if (cols->barcode1) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "BARCODE1");
+        
+        if (strlen(labels[record].barcode1) > 0) {
+            fprintf(fpout, "%-30s", labels[record].barcode1);
+
+            // graphic_name will be converted to its SAP lookup value from
+            // the static lookup array
+            gnp = sap_lookup(labels[record].barcode1);
+            if (gnp) {
+                strcpy(graphic_name, gnp);
+                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+            } else {
+                print_graphic_path(fpout, strcat(labels[record].barcode1, ".tif"));
+            }
+        } else {
+            fprintf(fpout, "%-30s", "NO");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        
+        fprintf(fpout, "\r\n"); 
+    }   
+
     // CE0120 record (optional)
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
@@ -631,6 +679,49 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].coostate, ".tif"));
         }
+        fprintf(fpout, "\r\n"); 
+    }
+
+    // LABELGRAPH1 record (optional)
+    if ((cols->labelgraph1) && (strlen(labels[record].labelgraph1) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "LABELGRAPH1");
+        fprintf(fpout, "%-30s", labels[record].labelgraph1);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].labelgraph1);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].labelgraph1, ".tif"));
+        }
+        fprintf(fpout, "\r\n"); 
+    }
+
+    // LATEXSTATEMENT record (optional)
+    if (cols->latexstate) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "LATEXSTATEMENT");
+
+        if (strlen(labels[record].latexstatement) > 0) {
+            fprintf(fpout, "%-30s", labels[record].latexstatement);
+
+            // graphic_name will be converted to its SAP lookup value from
+            // the static lookup array
+            gnp = sap_lookup(labels[record].latexstatement);
+            if (gnp) {
+                strcpy(graphic_name, gnp);
+                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+            } else {
+                print_graphic_path(fpout, strcat(labels[record].latexstatement, ".tif"));
+            }
+        } else {
+            fprintf(fpout, "%-30s", "NO");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        
         fprintf(fpout, "\r\n"); 
     }
 
