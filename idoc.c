@@ -32,23 +32,23 @@ int spreadsheet_row_number = 0;
 int sequence_number = 1;
 
 // Alphabetized SAP Characteristic Value Lookup
-    char lookup[][2][LRG] = {
-                        {"CE",          "CE Mark"         },
-                        {"CE0120",      "CE_0120_Below"   },
-                        {"CE0123",      "CE123"           },
-                        {"CE0050",      "CE0050"          },
-                        {"HEMO_AUTO_L", "HemoAutoL"       },
-                        {"HEMO_L",      "HemolokL"        },
-                        {"HEMO_ML",     "HemolokML"       },
-                        {"HMOCLPTRD",   "HmoclpTrd"       },
-                        {"NO",          "blank-01"        },
-                        {"N",           "blank-01"        },
-                        {"STERILEEO",   "Sterile_EO"      },
-                        {"WECK_LOGO",   "Wecklogo"        }
-                       };
+char lookup[][2][LRG] = {
+        {"CE",          "CE Mark"},
+        {"CE0120",      "CE_0120_Below"},
+        {"CE0123",      "CE123"},
+        {"CE0050",      "CE0050"},
+        {"HEMO_AUTO_L", "HemoAutoL"},
+        {"HEMO_L",      "HemolokL"},
+        {"HEMO_ML",     "HemolokML"},
+        {"HMOCLPTRD",   "HmoclpTrd"},
+        {"NO",          "blank-01"},
+        {"N",           "blank-01"},
+        {"STERILEEO",   "Sterile_EO"},
+        {"WECK_LOGO",   "Wecklogo"}
+};
 
 
-    int lookupsize = sizeof(lookup)/sizeof(lookup[0]);
+int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
 
 /**
     perform a binary search on the lookup array to find the SAP
@@ -57,25 +57,23 @@ int sequence_number = 1;
 char *sap_lookup(char *needle) {
 
     int start = 0;
-    int end   = lookupsize - 1;
+    int end = lookupsize - 1;
     int middle = 0;
 
     bool exit = false;
-    char *haystack = lookup[0][0];
+    // char *haystack = lookup[0][0];
 
     while (!exit) {
         if (middle != (end - start) / 2 + start)
-            middle =  (end - start) / 2 + start;
+            middle = (end - start) / 2 + start;
         else
             exit = true;
         haystack = lookup[middle][0];
         if (strcmp(needle, haystack) == 0) {
             return lookup[middle][1];
-        }
-        else if (strcmp(needle, haystack) < 0) {
+        } else if (strcmp(needle, haystack) < 0) {
             end = middle - 1;
-        }
-        else {
+        } else {
             start = middle + 1;
         }
     }
@@ -89,38 +87,29 @@ char *sap_lookup(char *needle) {
     row / string. Rows containing just tab characters are ignored.
     @param fp points to the input file
 */
-void read_spreadsheet(FILE *fp)
-{
+void read_spreadsheet(FILE *fp) {
 
     char c;
     char buffer[MAX_COLUMNS];
     bool line_not_empty = false;
     int i = 0;
 
-    while ((c = fgetc(fp)) != EOF)
-    {
-        if (c == CR)
-        {
-            if ((c = fgetc(fp)) == LF)
-            {
-                buffer[i] = '\0';
-                if (line_not_empty)
-                {
-                    if (spreadsheet_row_number >= spreadsheet_cap)
-                    {
-                        spreadsheet_expand();
-                    }
-                    spreadsheet[spreadsheet_row_number] =
-                        (char *)malloc(i * sizeof(char) + 2);
-                    strcpy(spreadsheet[spreadsheet_row_number], buffer);
-                    spreadsheet_row_number++;
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == LF) {
+            buffer[i] = '\0';
+            if (line_not_empty) {
+                if (spreadsheet_row_number >= spreadsheet_cap) {
+                    spreadsheet_expand();
                 }
-                i = 0;
-                line_not_empty = false;
+                spreadsheet[spreadsheet_row_number] =
+                        (char *) malloc(i * sizeof(char) + 2);
+                strcpy(spreadsheet[spreadsheet_row_number], buffer);
+                spreadsheet_row_number++;
             }
-        }
-        else if ((c != CR) && (c != LF))
-        {
+            i = 0;
+            line_not_empty = false;
+
+        } else {
             buffer[i++] = c;
             if (c != '\t')
                 line_not_empty = true;
@@ -133,8 +122,7 @@ void read_spreadsheet(FILE *fp)
     @param fpout points to the output file
     @param n is the number of spaces to print
 */
-void print_spaces(FILE *fpout, int n)
-{
+void print_spaces(FILE *fpout, int n) {
     for (int i = 0; i < n; i++)
         fprintf(fpout, " ");
 }
@@ -147,7 +135,7 @@ void print_spaces(FILE *fpout, int n)
 void print_graphic_path(FILE *fpout, char *graphic) {
     fprintf(fpout, "%s", GRAPHICS_PATH);
     fprintf(fpout, "%s", graphic);
-    int n = 255 - strlen(GRAPHICS_PATH) + strlen(graphic);
+    int n = 255 - (strlen(GRAPHICS_PATH) + strlen(graphic));
     for (int i = 0; i < n; i++)
         fprintf(fpout, " ");
 }
@@ -157,8 +145,7 @@ void print_graphic_path(FILE *fpout, char *graphic) {
     @param fpout points to the output file
     @param n is the number of spaces to print
 */
-void print_Z2BTLC01000(FILE *fpout, char *ctrl_num)
-{
+void print_Z2BTLC01000(FILE *fpout, char *ctrl_num) {
     fprintf(fpout, "Z2BTLC01000");
     print_spaces(fpout, 19);
     fprintf(fpout, "500000000000");
@@ -172,8 +159,7 @@ void print_Z2BTLC01000(FILE *fpout, char *ctrl_num)
     prints the IDoc control record
     @param fpout points to the output file
 */
-int print_control_record(FILE *fpout, char *ctrl_num)
-{
+int print_control_record(FILE *fpout, char *ctrl_num) {
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -197,7 +183,7 @@ int print_control_record(FILE *fpout, char *ctrl_num)
     print_spaces(fpout, 112);
     fprintf(fpout, "Material_EN");
     print_spaces(fpout, 9);
-    fprintf(fpout, "\r\n");
+    fprintf(fpout, "\n");
 
     return 0;
 }
@@ -227,19 +213,19 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%06d", sequence_number++);
         fprintf(fpout, "00000002");
         fprintf(fpout, "%-18s", labels[record].material);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // LABEL record (required)
-        fprintf(fpout, "Z2BTLH01000");
-        print_spaces(fpout, 19);
-        fprintf(fpout, "500000000000");
-        // cols 22-29 - 7 digit control number?
-        fprintf(fpout, "%s", ctrl_num);
-        fprintf(fpout, "%06d", sequence_number++);
-        fprintf(fpout, "00000103");
-        fprintf(fpout, "%-18s", labels[record].label);
-        fprintf(fpout, "\r\n");
+    fprintf(fpout, "Z2BTLH01000");
+    print_spaces(fpout, 19);
+    fprintf(fpout, "500000000000");
+    // cols 22-29 - 7 digit control number?
+    fprintf(fpout, "%s", ctrl_num);
+    fprintf(fpout, "%06d", sequence_number++);
+    fprintf(fpout, "00000103");
+    fprintf(fpout, "%-18s", labels[record].label);
+    fprintf(fpout, "\n");
 
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
     if (cols->tdline) {
@@ -268,9 +254,8 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
             // and convert instances of double quotes to single quotes
             char *a = strstr(token, "\"\"");
-            if (a != NULL)
-            {
-                memcpy(a, a+1, strlen(a));
+            if (a != NULL) {
+                memcpy(a, a + 1, strlen(a));
                 token[strlen(token)] = '\0';
             }
 
@@ -293,7 +278,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             else
                 fprintf(fpout, "/");
             tdline_count++;
-            fprintf(fpout, "\r\n");
+            fprintf(fpout, "\n");
         }
     }
 
@@ -302,7 +287,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     fprintf(fpout, "%-30s", "TEMPLATENUMBER");
     fprintf(fpout, "%-30s", labels[record].template);
     fprintf(fpout, "%-255s", labels[record].template);
-    fprintf(fpout, "\r\n");
+    fprintf(fpout, "\n");
 
     // REVISION record (optional)
     if ((cols->revision) && (strlen(labels[record].revision) > 0)) {
@@ -310,11 +295,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "REVISION");
         fprintf(fpout, "%-30s", labels[record].revision);
         fprintf(fpout, "%-255s", labels[record].revision);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // SIZE record (optional)
-    if ((cols->size) && (strlen(labels[record].size) > 0)){
+    if ((cols->size) && (strlen(labels[record].size) > 0)) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -337,7 +322,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "SIZE");
         fprintf(fpout, "%-30s", labels[record].size);
         fprintf(fpout, "%-255s", labels[record].size);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // LEVEL record (optional)
@@ -346,7 +331,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "LEVEL");
         fprintf(fpout, "%-30s", labels[record].level);
         fprintf(fpout, "%-255s", labels[record].level);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // QUANTITY record (optional)
@@ -355,7 +340,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "QUANTITY");
         fprintf(fpout, "%-30s", labels[record].quantity);
         fprintf(fpout, "%-255s", labels[record].quantity);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // BARCODETEXT record (optional)
@@ -364,7 +349,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "BARCODETEXT");
         fprintf(fpout, "%-30s", labels[record].gtin);
         fprintf(fpout, "%-255s", labels[record].gtin);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // LTNUMBER record (optional)
@@ -373,7 +358,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "LTNUMBER");
         fprintf(fpout, "%-30s", labels[record].ipn);
         fprintf(fpout, "%-255s", labels[record].ipn);
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     //
@@ -382,109 +367,161 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     int g_cnt = 1;
     char g_cnt_str[03];
-    char graphic[] = "GRAPHIC";
-
-    // SINGLEPATIENTUSE record (optional)
-    if (cols->singlepatientuse) {
-        if (labels[record].singlepatientuse) {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
-            fprintf(fpout, "\r\n");
-        }
-    }
+    char graphic[] = "GRAPHIC0";
 
     // CAUTION record (optional)
-    if (cols->caution) {
-        if (labels[record].caution)
-        {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            strcpy(graphic, "GRAPHIC");
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "Caution.tif");
-            fprintf(fpout, "\r\n");
-        }
+    if (cols->caution && labels[record].caution) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "Caution.tif");
+        fprintf(fpout, "\n");
     }
 
     // ConsultIFU record (optional)
-    if (cols->consultifu)
-    {
+    if (cols->consultifu && labels[record].consultifu) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "ConsultIFU.tif");
+        fprintf(fpout, "\n");
+    }
 
-        if (labels[record].consultifu)
-        {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            strcpy(graphic, "GRAPHIC");
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "ConsultIFU.tif");
-            fprintf(fpout, "\r\n");
-        }
+    // Containslatex record (optional)
+    if (cols->latex && labels[record].latex) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "Latex.tif");
+        fprintf(fpout, "\n");
     }
 
     // DoNotUsePakDam record (optional)
-    if (cols->donotusedam)
-    {
-        if (labels[record].donotusedamaged)
-        {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            strcpy(graphic, "GRAPHIC");
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "DoNotUsePakDam.tif");
-            fprintf(fpout, "\r\n");
-        }
+    if (cols->donotusedam && labels[record].donotusedamaged) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "DoNotUsePakDam.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // Latex free record (optional)
+    if (cols->latexfree && labels[record].latexfree) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "Latex Free.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // Man in box record (optional)
+    if (cols->maninbox && labels[record].maninbox) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "ManInBox.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // DoNotRe-sterilize record (optional)
+    if (cols->noresterile && labels[record].noresterilize) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "DoNotRe-sterilize.tif");
+        fprintf(fpout, "\n");
     }
 
     // Non-sterile record (optional)
-    if (cols->nonsterile)
-    {
-        if (labels[record].nonsterile)
-        {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            strcpy(graphic, "GRAPHIC");
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "Non-sterile.tif");
-            fprintf(fpout, "\r\n");
-        }
+    if (cols->nonsterile && labels[record].nonsterile) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "Non-sterile.tif");
+        fprintf(fpout, "\n");
     }
 
-        // DoNotRe-sterilize record (optional)
-    if (cols->noresterile)
-    {
-        if (labels[record].noresterilize)
-        {
-            print_Z2BTLC01000(fpout, ctrl_num);
-            sprintf(g_cnt_str, "%02d", g_cnt++);
-            strcpy(graphic, "GRAPHIC");
-            fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "DoNotRe-sterilize.tif");
-            fprintf(fpout, "\r\n");
-        }
+    // PVC Free record (optional)
+    if (cols->pvcfree && labels[record].nonsterile) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "PVC_Free.tif");
+        fprintf(fpout, "\n");
     }
 
-        // singleuse record (optional)
-    if (cols->singleuse)
-        {
-            if (labels[record].singleuseonly)
-            {
-                print_Z2BTLC01000(fpout, ctrl_num);
-                sprintf(g_cnt_str, "%02d", g_cnt++);
-                strcpy(graphic, "GRAPHIC");
-                fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-                fprintf(fpout, "%-30s", "Y");
-                print_graphic_path(fpout, "SINGLEUSE.tif");
-                fprintf(fpout, "\r\n");
-            }
-        }
+    // RESUSABLE record (optional)
+    if (cols->reusable && labels[record].reusable) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "REUSABLE.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // singleuse record (optional)
+    if (cols->singleuse && labels[record].singleuseonly) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "SINGLEUSE.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // SINGLEPATIENTUSE record (optional)
+    if (cols->singlepatientuse && labels[record].singlepatientuse) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // electrosurgicalifu record (optional)
+    if (cols->electroifu && labels[record].electroifu) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt++);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "ElectroSurIFU.tif");
+        fprintf(fpout, "\n");
+    }
+
+    // keepdry record (optional)
+    if (cols->keepdry && labels[record].keepdry) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        sprintf(g_cnt_str, "%d", g_cnt);
+        strcpy(graphic, "GRAPHIC0");
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, "KeepDry.tif");
+        fprintf(fpout, "\n");
+    }
 
     // ECREP record (optional)
     if (cols->ecrep) {
@@ -493,11 +530,20 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].ecrep) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "EC Rep.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
+    }
+
+    // BOMLEVEL record (optional)
+    if ((cols->bomlevel) && (strlen(labels[record].bomlevel) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "BOMLEVEL");
+        fprintf(fpout, "%-30s", labels[record].bomlevel);
+        print_graphic_path(fpout, strcat(labels[record].bomlevel, ".tif"));
+        fprintf(fpout, "\n");
     }
 
     // EXPDATE record (optional)
@@ -507,11 +553,25 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].expdate) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "Expiration Date.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
+    }
+
+    // KEEPAWAYHEAT record (optional)
+    if (cols->keepawayheat) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "KEEPAWAYHEAT");
+        if (labels[record].keepawayheat) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "KEEPAWAYHEAT.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
     }
 
     // LOTGRAPHIC record (optional)
@@ -521,11 +581,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].lotgraphic) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "Lot.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // MANUFACTURER record (optional)
@@ -535,11 +595,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].manufacturer) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "Manufacturer.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // MFGDATE record (optional)
@@ -549,11 +609,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].mfgdate) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "DateofManufacture.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // PHTDEHP record (optional)
@@ -563,12 +623,40 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].phtdehp) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "PHT-DEHP.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
-    }    
+        fprintf(fpout, "\n");
+    }
+
+    // PHTBBP record (optional)
+    if (cols->phtbbp) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "PHTBBP");
+        if (labels[record].phtbbp) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "PHT-BBP.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // PHTDINP record (optional)
+    if (cols->phtdinp) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "PHTDINP");
+        if (labels[record].phtdinp) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "PHT-DINP.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
+    }
 
     // REFNUMBER record (optional)
     if (cols->refnumber) {
@@ -577,11 +665,25 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].refnumber) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "REF.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
+    }
+
+    // REF record (optional)
+    if (cols->ref) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "REF");
+        if (labels[record].ref) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "REF.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
     }
 
     // RXONLY record (optional)
@@ -591,11 +693,39 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].rxonly) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "RX Only.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
+    }
+
+    // SERIAL record (optional)
+    if (cols->serial) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "SERIAL");
+        if (labels[record].serial) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "Serial Number.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // SIZELOGO record (optional)
+    if (cols->sizelogo) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "SIZELOGO");
+        if (labels[record].sizelogo) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "blank-01.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
     }
 
     // TFXLOGO record (optional)
@@ -605,11 +735,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         if (labels[record].tfxlogo) {
             fprintf(fpout, "%-30s", "Y");
             print_graphic_path(fpout, "TeleflexMedical.tif");
-        }else {
+        } else {
             fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // ADDRESS record (optional)
@@ -618,14 +748,38 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         fprintf(fpout, "%-30s", "ADDRESS");
         fprintf(fpout, "%-30s", labels[record].address);
         print_graphic_path(fpout, strcat(labels[record].address, ".tif"));
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
+    // CAUTIONSTATE record (optional)
+    if (cols->cautionstate) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "CAUTIONSTATE");
+
+        if (strlen(labels[record].cautionstatement) > 0) {
+            fprintf(fpout, "%-30s", labels[record].cautionstatement);
+
+            // graphic_name will be converted to its SAP lookup value from
+            // the static lookup array
+            gnp = sap_lookup(labels[record].cautionstatement);
+            if (gnp) {
+                strcpy(graphic_name, gnp);
+                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+            } else {
+                print_graphic_path(fpout, strcat(labels[record].cautionstatement, ".tif"));
+            }
+        } else {
+            fprintf(fpout, "%-30s", "NO");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+
+        fprintf(fpout, "\n");
+    }
     // BARCODE1 record (optional)
-    if (cols->barcode1) {
+    /*if (cols->barcode1) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "BARCODE1");
-        
+
         if (strlen(labels[record].barcode1) > 0) {
             fprintf(fpout, "%-30s", labels[record].barcode1);
 
@@ -642,10 +796,10 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             fprintf(fpout, "%-30s", "NO");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        
-        fprintf(fpout, "\r\n"); 
-    }   
 
+        fprintf(fpout, "\n");
+    }
+*/
     // CE0120 record (optional)
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
@@ -661,7 +815,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].cemark, ".tif"));
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
     // COOSTATE record (optional)
@@ -679,7 +833,61 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].coostate, ".tif"));
         }
-        fprintf(fpout, "\r\n"); 
+        fprintf(fpout, "\n");
+    }
+
+    // DISTRIBUTEDBY record (optional)
+    if ((cols->distby) && (strlen(labels[record].distby) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "DISTRIBUTEDBY");
+        fprintf(fpout, "%-30s", labels[record].distby);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].distby);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].distby, ".tif"));
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // ECREPADDRESS record (optional)
+    if ((cols->ecrepaddress) && (strlen(labels[record].ecrepaddress) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "ECREPADDRESS");
+        fprintf(fpout, "%-30s", labels[record].ecrepaddress);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].ecrepaddress);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].ecrepaddress, ".tif"));
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // FLGRAPHIC record (optional)
+    if ((cols->flgraphic) && (strlen(labels[record].flgraphic) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "FLGRAPHIC");
+        fprintf(fpout, "%-30s", labels[record].flgraphic);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].flgraphic);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].flgraphic, ".tif"));
+        }
+        fprintf(fpout, "\n");
     }
 
     // LABELGRAPH1 record (optional)
@@ -697,7 +905,25 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].labelgraph1, ".tif"));
         }
-        fprintf(fpout, "\r\n"); 
+        fprintf(fpout, "\n");
+    }
+
+    // LABELGRAPH2 record (optional)
+    if ((cols->labelgraph2) && (strlen(labels[record].labelgraph2) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "LABELGRAPH2");
+        fprintf(fpout, "%-30s", labels[record].labelgraph2);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].labelgraph2);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].labelgraph2, ".tif"));
+        }
+        fprintf(fpout, "\n");
     }
 
     // LATEXSTATEMENT record (optional)
@@ -721,27 +947,10 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             fprintf(fpout, "%-30s", "NO");
             print_graphic_path(fpout, "blank-01.tif");
         }
-        
-        fprintf(fpout, "\r\n"); 
+
+        fprintf(fpout, "\n");
     }
 
-    // ECREPADDRESS record (optional)
-    if ((cols->ecrepaddress) && (strlen(labels[record].ecrepaddress) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "ECREPADDRESS");
-        fprintf(fpout, "%-30s", labels[record].ecrepaddress);
-
-        // graphic_name will be converted to its SAP lookup value from
-        // the static lookup array
-        gnp = sap_lookup(labels[record].ecrepaddress);
-        if (gnp) {
-            strcpy(graphic_name, gnp);
-            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record].ecrepaddress, ".tif"));
-        }
-        fprintf(fpout, "\r\n");  
-    }
 
     // LOGO1 record (optional)
     if ((cols->logo1) && (strlen(labels[record].logo1) > 0)) {
@@ -758,11 +967,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].logo1, ".tif"));
         }
-        fprintf(fpout, "\r\n");        
+        fprintf(fpout, "\n");
     }
 
-      // LOGO2 record (optional)
-    if  ((cols->logo2) && (strlen(labels[record].logo2) > 0)) {
+    // LOGO2 record (optional)
+    if ((cols->logo2) && (strlen(labels[record].logo2) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "LOGO2");
         fprintf(fpout, "%-30s", labels[record].logo2);
@@ -775,7 +984,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].logo2, ".tif"));
         }
-        fprintf(fpout, "\r\n");   
+        fprintf(fpout, "\n");
     }
 
     // LOGO3 record (optional)
@@ -792,7 +1001,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].logo3, ".tif"));
         }
-        fprintf(fpout, "\r\n");   
+        fprintf(fpout, "\n");
     }
 
     // LOGO4 record (optional)
@@ -809,7 +1018,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].logo4, ".tif"));
         }
-        fprintf(fpout, "\r\n");   
+        fprintf(fpout, "\n");
     }
 
     // LOGO5 record (optional)
@@ -826,12 +1035,62 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].logo5, ".tif"));
         }
-        fprintf(fpout, "\r\n");   
+        fprintf(fpout, "\n");
+    }
+
+    // MANUFACTUREDBY record (optional)
+    if ((cols->manufacturedby) && (strlen(labels[record].manufacturedby) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "MANUFACTUREDBY");
+        fprintf(fpout, "%-30s", labels[record].manufacturedby);
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].manufacturedby);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].manufacturedby, ".tif"));
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // PATENTSTA record (optional)
+    if ((cols->patentstatement) && (strlen(labels[record].patentstatement) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "PATENTSTA");
+        fprintf(fpout, "%-30s", labels[record].patentstatement);
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].patentstatement);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].patentstatement, ".tif"));
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // STERILESTA record (optional)
+    if ((cols->sterilitystatement) && (strlen(labels[record].sterilitystatement) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "STERILESTA");
+        fprintf(fpout, "%-30s", labels[record].sterilitystatement);
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].sterilitystatement);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].sterilitystatement, ".tif"));
+        }
+        fprintf(fpout, "\n");
     }
 
     // STERILITYTYPE record (optional)
-    if ((cols->sterilitytype) && (strlen(labels[record].sterilitytype) > 0))
-    {
+    if ((cols->sterilitytype) && (strlen(labels[record].sterilitytype) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
         fprintf(fpout, "%-30s", "STERILITYTYPE");
         fprintf(fpout, "%-30s", labels[record].sterilitytype);
@@ -845,16 +1104,43 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         } else {
             print_graphic_path(fpout, strcat(labels[record].sterilitytype, ".tif"));
         }
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "\n");
     }
 
-    // BOMLEVEL record (optional)
-    if ((cols->bomlevel) && (strlen(labels[record].bomlevel) > 0)) {
+    // VERSION record (optional)
+    if ((cols->version) && (strlen(labels[record].version) > 0)) {
         print_Z2BTLC01000(fpout, ctrl_num);
-        fprintf(fpout, "%-30s", "BOMLEVEL");
-        fprintf(fpout, "%-30s", labels[record].bomlevel);
-        print_graphic_path(fpout, strcat(labels[record].bomlevel, ".tif"));
-        fprintf(fpout, "\r\n");
+        fprintf(fpout, "%-30s", "VERSION");
+        fprintf(fpout, "%-30s", labels[record].version);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].version);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(labels[record].version, ".tif"));
+        }
+        fprintf(fpout, "\n");
+    }
+
+    // INSERTGRAPHIC record (optional)
+    if ((cols->insertgraphic) && (strlen(labels[record].insertgraphic) > 0)) {
+        print_Z2BTLC01000(fpout, ctrl_num);
+        fprintf(fpout, "%-30s", "INSERTGRAPHIC");
+        fprintf(fpout, "%-30s", labels[record].insertgraphic);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        gnp = sap_lookup(labels[record].insertgraphic);
+        if (gnp) {
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
     }
 }
 
@@ -866,41 +1152,35 @@ int main(int argc, char *argv[]) {
     // the Label_record array
     Label_record *labels;
 
-    if (spreadsheet_init() != 0)
-    {
+    if (spreadsheet_init() != 0) {
         printf("Could not initialize spreadsheet array. Exiting\n");
         return EXIT_FAILURE;
     }
 
     FILE *fp, *fpout;
 
-    if ((argc != 2) && (argc != 4))
-    {
+    if ((argc != 2) && (argc != 4)) {
         printf("usage: ./idoc filename.txt -sn 7-digit-sn\n");
         return EXIT_FAILURE;
     }
 
-    if ((fp = fopen(argv[1], "r")) == NULL)
-    {
+    if ((fp = fopen(argv[1], "r")) == NULL) {
         printf("File not found.\n");
         return EXIT_FAILURE;
-    }
-    else
-    {
+    } else {
         read_spreadsheet(fp);
     }
     fclose(fp);
 
     labels =
-        (Label_record *)malloc(spreadsheet_row_number * sizeof(Label_record));
+            (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
 
-    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1)
-    {
+    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
         printf("Program quitting.\n");
         return EXIT_FAILURE;
     }
 
-    char *outputfile = (char *)malloc(strlen(argv[1]) + FILE_EXT_LEN);
+    char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
     sscanf(argv[1], "%[^.]%*[txt]", outputfile);
     strcat(outputfile, "_IDOC.txt");
@@ -909,13 +1189,12 @@ int main(int argc, char *argv[]) {
     // check for optional control_number from command line
     char ctrl_num[8] = "2541435";
     if (argc > 2) {
-        if  ((argv[2] != NULL) && (strcmp(argv[2], "-cn") == 0)) {
+        if ((argv[2] != NULL) && (strcmp(argv[2], "-cn") == 0)) {
             strcpy(ctrl_num, argv[3]);
         }
     }
 
-    if ((fpout = fopen(outputfile, "w")) == NULL)
-    {
+    if ((fpout = fopen(outputfile, "w")) == NULL) {
         printf("Could not open output file %s", outputfile);
     }
 
@@ -924,7 +1203,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 1; i < spreadsheet_row_number; i++) {
         print_label_idoc_records(fpout, labels, &columns, i, ctrl_num);
-      }
+    }
 
     fclose(fpout);
     free(outputfile);

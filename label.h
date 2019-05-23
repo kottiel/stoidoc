@@ -13,7 +13,7 @@
 #define INITIAL_CAP             3
 #define SPREADSHEET_INIT_SIZE   3
 #define MAX_COLUMNS          1000
-#define MED                    21
+#define MED                    30
 #define LRG                    41
 #define TAB                  '\t'
 
@@ -28,69 +28,71 @@ typedef char *multi_tok_t;
 
 */
 typedef struct {
-  char   material[LRG];
-  char   address[MED];
-  char   barcode1[MED];  
-  char   cautionstatement[MED];
-  char   cemark[MED];
-  char   coostate[MED];
-  char   distby[MED];
-  char   ecrepaddress[MED];
-  char   flgraphic[MED];
-  char   insertgraphic[MED];
-  char   labelgraph1[MED];
-  char   labelgraph2[MED];
-  char   latexstatement[MED];
-  char   logo1[MED];
-  char   logo2[MED];
-  char   logo3[MED];
-  char   logo4[MED];
-  char   logo5[MED];
-  char   patentstatement[MED];
-  char   size[MED];
-  char   sterilitystatement[MED];
-  char   sterilitytype[MED];
-  char   temperaturerange[MED];
-  char   version[MED];
-  char   gtin[15];
-  char   level[11];
-  char   label[10];
-  char   ipn[10];
-  char   quantity[9];
-  char   template[8];
-  char   bomlevel[5];
-  char   revision[4];
-  char   *tdline;
+    char material[LRG];
+    char coostate[LRG];
+    char address[MED];
+    /* char barcode1[MED];*/
+    char cautionstatement[MED];
+    char cemark[MED];
 
-  bool    caution;
-  bool    consultifu;
-  bool    donotusedamaged;
-  bool    ecrep;
-  bool    electrosurifu;
-  bool    expdate;
-  bool    keepdry;
-  bool    keepawayheat;
-  bool    latex;
-  bool    latexfree;
-  bool    lotgraphic;
-  bool    maninbox;
-  bool    manufacturer;
-  bool    mfgdate;
-  bool    nonsterile;
-  bool    noresterilize;
-  bool    phtbbp;
-  bool    phtdinp;
-  bool    phtdehp;
-  bool    pvcfree;
-  bool    ref;
-  bool    refnumber;
-  bool    reusable;
-  bool    serialnumber;
-  bool    sizelogo;
-  bool    rxonly;
-  bool    singlepatientuse;
-  bool    singleuseonly;
-  bool    tfxlogo;
+    char distby[MED];
+    char ecrepaddress[MED];
+    char flgraphic[MED];
+    char insertgraphic[MED];
+    char labelgraph1[MED];
+    char labelgraph2[MED];
+    char latexstatement[MED];
+    char logo1[MED];
+    char logo2[MED];
+    char logo3[MED];
+    char logo4[MED];
+    char logo5[MED];
+    char manufacturedby[MED];
+    char patentstatement[MED];
+    char size[MED];
+    char sterilitystatement[MED];
+    char sterilitytype[MED];
+    char temperaturerange[MED];
+    char version[MED];
+    char gtin[15];
+    char level[11];
+    char label[10];
+    char ipn[10];
+    char quantity[9];
+    char template[8];
+    char bomlevel[5];
+    char revision[4];
+    char *tdline;
+
+    bool caution;
+    bool consultifu;
+    bool donotusedamaged;
+    bool ecrep;
+    bool electroifu;
+    bool expdate;
+    bool keepdry;
+    bool keepawayheat;
+    bool latex;
+    bool latexfree;
+    bool lotgraphic;
+    bool maninbox;
+    bool manufacturer;
+    bool mfgdate;
+    bool nonsterile;
+    bool noresterilize;
+    bool phtbbp;
+    bool phtdinp;
+    bool phtdehp;
+    bool pvcfree;
+    bool ref;
+    bool refnumber;
+    bool reusable;
+    bool serial;
+    bool sizelogo;
+    bool rxonly;
+    bool singlepatientuse;
+    bool singleuseonly;
+    bool tfxlogo;
 } Label_record;
 
 /**
@@ -99,23 +101,30 @@ typedef struct {
 typedef struct {
     unsigned short address;
     unsigned short barcodetext;
-    unsigned short barcode1;
+    /*unsigned short barcode1;*/
     unsigned short bomlevel;
     unsigned short caution;
     unsigned short cautionstate;
     unsigned short ce0120;
     unsigned short consultifu;
     unsigned short coostate;
+    unsigned short distby;
     unsigned short donotusedam;
     unsigned short ecrep;
     unsigned short ecrepaddress;
+    unsigned short electroifu;
     unsigned short expdate;
     unsigned short flgraphic;
+    unsigned short insertgraphic;
+    unsigned short keepawayheat;
+    unsigned short keepdry;
     unsigned short label;
     unsigned short labelgraph1;
     unsigned short labelgraph2;
+    unsigned short latex;
     unsigned short latexfree;
     unsigned short latexstate;
+    unsigned short manufacturedby;
     unsigned short level;
     unsigned short logo1;
     unsigned short logo2;
@@ -138,11 +147,14 @@ typedef struct {
     unsigned short quantity;
     unsigned short ref;
     unsigned short refnumber;
+    unsigned short reusable;
     unsigned short revision;
     unsigned short rxonly;
+    unsigned short serial;
     unsigned short singleuse;
     unsigned short singlepatientuse;
     unsigned short size;
+    unsigned short sizelogo;
     unsigned short sterilitystatement;
     unsigned short sterilitytype;
     unsigned short tdline;
@@ -175,9 +187,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols);
     @return a pointer to a dynamically allocated char array
 */
 char *get_token(char *buffer, char tab_str);
+
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str);
+
 int peek_nth_token(int n, const char *buffer, char delimiter);
+
 int spreadsheet_init();
+
 int spreadsheet_expand();
 
 char *multi_tok(char *input, char *delimiter);
