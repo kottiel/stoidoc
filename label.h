@@ -198,4 +198,8 @@ int spreadsheet_expand();
 
 char *multi_tok(char *input, char *delimiter);
 
+void sort_labels(Label_record *labels);
+
+void swap_label_records(Label_record *labels, int i, int min_index);
+
 #endif
