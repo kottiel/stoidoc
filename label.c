@@ -609,3 +609,28 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
     }
     return count;
 }
+
+void sort_labels(Label_record *labels) {
+
+    Label_record min_label;
+
+    for (int i = 1; i < spreadsheet_row_number; i++) {
+        int min_index = i;
+        min_label = labels[i];
+
+        for (int j = i + 1; j < spreadsheet_row_number; j++) {
+            if (strcmp(labels[j].label, min_label.label) < 0) {
+                min_label = labels[j];
+                min_index = j;
+            }
+        }
+
+        swap_label_records(labels, i, min_index);
+    }
+}
+
+void swap_label_records(Label_record *labels, int i, int min_index) {
+    Label_record temp = labels[i];
+    labels[i] = labels[min_index];
+    labels[min_index] = temp;
+}
