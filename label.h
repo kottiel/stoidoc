@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 
+/* the spreadsheet's initial capacity */
 #define INITIAL_CAP             3
 #define SPREADSHEET_INIT_SIZE   3
 #define MAX_COLUMNS          1000

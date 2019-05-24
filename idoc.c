@@ -1,3 +1,6 @@
+/**
+ *  idoc.c
+ */
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,7 +16,7 @@
 /* end of line new line character    */
 #define LF '\n'
 
-/* length of '_IDOC.txt' extension   */
+/* length of '_idoc->txt' extension   */
 #define FILE_EXT_LEN   10
 
 /* normal graphics folder path   */
@@ -47,8 +50,18 @@ char lookup[][2][LRG] = {
         {"WECK_LOGO",   "Wecklogo"}
 };
 
-
 int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
+
+// a struct of IDoc sequence numbers
+struct control_numbers {
+    char ctrl_num[8];
+    int matl_seq_number;
+    int labl_seq_number;
+    int tdline_seq_number;
+    int char_seq_number;
+};
+
+typedef struct control_numbers Ctrl;
 
 /**
     perform a binary search on the lookup array to find the SAP
@@ -145,21 +158,22 @@ void print_graphic_path(FILE *fpout, char *graphic) {
     @param fpout points to the output file
     @param n is the number of spaces to print
 */
-void print_Z2BTLC01000(FILE *fpout, char *ctrl_num) {
+void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
     fprintf(fpout, "Z2BTLC01000");
     print_spaces(fpout, 19);
     fprintf(fpout, "500000000000");
     // cols 22-29 - 7 digit control number?
     fprintf(fpout, "%s", ctrl_num);
     fprintf(fpout, "%06d", sequence_number++);
-    fprintf(fpout, "00000204");
+    fprintf(fpout, "%06d", char_seq_number);
+    fprintf(fpout, CHAR_REC);
 }
 
 /**
     prints the IDoc control record
     @param fpout points to the output file
 */
-int print_control_record(FILE *fpout, char *ctrl_num) {
+int print_control_record(FILE *fpout, Ctrl *idoc) {
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -167,7 +181,7 @@ int print_control_record(FILE *fpout, char *ctrl_num) {
     // line 1
     fprintf(fpout, "EDI_DC40  500000000000");
     // cols 22-29 - 7 digit control number?
-    fprintf(fpout, "%s", ctrl_num);
+    fprintf(fpout, "%s", idoc->ctrl_num);
     // BarTender ibtdoc release
     fprintf(fpout, "740");
     fprintf(fpout, " 3012  Z1BTDOC");
@@ -195,7 +209,7 @@ int print_control_record(FILE *fpout, char *ctrl_num) {
     @param labels is the array of label records
     @param label_record is the label index we're accessing
 */
-void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *cols, int record, char *ctrl_num) {
+void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *cols, int record, Ctrl *idoc) {
 
     // Print the records for a given IDOC (labels[record])
 
@@ -207,14 +221,23 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     // MATERIAL record (optional)
     // (this is skipped if the previous material record is the same)
     if ((cols->material) && (strlen(labels[record].material) > 0)) {
+
+        // check whether it's a new material
         if (strcmp(prev_material, labels[record].material) != 0) {
+
+            // new material record
             fprintf(fpout, "Z2BTMH01000");
             print_spaces(fpout, 19);
             fprintf(fpout, "500000000000");
             // cols 22-29 - 7 digit control number?
-            fprintf(fpout, "%s", ctrl_num);
-            fprintf(fpout, "%06d", sequence_number++);
-            fprintf(fpout, "000000");
+            fprintf(fpout, "%s", idoc->ctrl_num);
+            fprintf(fpout, "%06d", sequence_number);
+            // every NEW material number carries over the sequence_number
+            idoc->matl_seq_number = sequence_number - 1;
+            idoc->labl_seq_number = sequence_number;
+            fprintf(fpout, "%06d", idoc->matl_seq_number);
+            sequence_number++;
+
             fprintf(fpout, MATERIAL_REC);
             fprintf(fpout, "%-18s", labels[record].material);
             fprintf(fpout, "\n");
@@ -226,9 +249,13 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     print_spaces(fpout, 19);
     fprintf(fpout, "500000000000");
     // cols 22-29 - 7 digit control number?
-    fprintf(fpout, "%s", ctrl_num);
-    fprintf(fpout, "%06d", sequence_number++);
-    fprintf(fpout, "00000103");
+    fprintf(fpout, "%s", idoc->ctrl_num);
+    fprintf(fpout, "%06d", sequence_number);
+    fprintf(fpout, "%06d", idoc->labl_seq_number);
+    idoc->tdline_seq_number = sequence_number;
+    idoc->char_seq_number = sequence_number;
+    sequence_number++;
+    fprintf(fpout, LABEL_REC);
     fprintf(fpout, "%-18s", labels[record].label);
     fprintf(fpout, "\n");
 
@@ -243,9 +270,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             print_spaces(fpout, 19);
             fprintf(fpout, "500000000000");
             // cols 22-29 - 7 digit control number?
-            fprintf(fpout, "%s", ctrl_num);
+            fprintf(fpout, "%s", idoc->ctrl_num);
             fprintf(fpout, "%06d", sequence_number++);
-            fprintf(fpout, "00000204GRUNE  ENMATERIAL  ");
+            fprintf(fpout, "%06d", idoc->tdline_seq_number);
+            fprintf(fpout, TDLINE_REC);
+            fprintf(fpout, "GRUNE  ENMATERIAL  ");
             fprintf(fpout, "%s", labels[record].label);
             print_spaces(fpout, 61);
 
@@ -288,7 +317,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // TEMPLATENUMBER record (required)
-    print_Z2BTLC01000(fpout, ctrl_num);
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
     fprintf(fpout, "%-30s", "TEMPLATENUMBER");
     fprintf(fpout, "%-30s", labels[record].template);
     fprintf(fpout, "%-255s", labels[record].template);
@@ -296,7 +325,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // REVISION record (optional)
     if ((cols->revision) && (strlen(labels[record].revision) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "REVISION");
         fprintf(fpout, "%-30s", labels[record].revision);
         fprintf(fpout, "%-255s", labels[record].revision);
@@ -323,7 +352,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             memcpy(token + diff, token + diff + 1, strlen(token) - 2);
         }
 
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "SIZE");
         fprintf(fpout, "%-30s", labels[record].size);
         fprintf(fpout, "%-255s", labels[record].size);
@@ -332,7 +361,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LEVEL record (optional)
     if ((cols->level) && (strlen(labels[record].level) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LEVEL");
         fprintf(fpout, "%-30s", labels[record].level);
         fprintf(fpout, "%-255s", labels[record].level);
@@ -341,7 +370,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // QUANTITY record (optional)
     if ((cols->quantity) && (strlen(labels[record].quantity) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "QUANTITY");
         fprintf(fpout, "%-30s", labels[record].quantity);
         fprintf(fpout, "%-255s", labels[record].quantity);
@@ -350,7 +379,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // BARCODETEXT record (optional)
     if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "BARCODETEXT");
         fprintf(fpout, "%-30s", labels[record].gtin);
         fprintf(fpout, "%-255s", labels[record].gtin);
@@ -359,7 +388,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LTNUMBER record (optional)
     if ((cols->ltnumber) && (strlen(labels[record].ipn) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LTNUMBER");
         fprintf(fpout, "%-30s", labels[record].ipn);
         fprintf(fpout, "%-255s", labels[record].ipn);
@@ -376,7 +405,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // CAUTION record (optional)
     if (cols->caution && labels[record].caution) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -387,7 +416,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // ConsultIFU record (optional)
     if (cols->consultifu && labels[record].consultifu) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -398,7 +427,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Containslatex record (optional)
     if (cols->latex && labels[record].latex) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -409,7 +438,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // DoNotUsePakDam record (optional)
     if (cols->donotusedam && labels[record].donotusedamaged) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -420,7 +449,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Latex free record (optional)
     if (cols->latexfree && labels[record].latexfree) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -431,7 +460,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Man in box record (optional)
     if (cols->maninbox && labels[record].maninbox) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -442,7 +471,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // DoNotRe-sterilize record (optional)
     if (cols->noresterile && labels[record].noresterilize) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -453,7 +482,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // Non-sterile record (optional)
     if (cols->nonsterile && labels[record].nonsterile) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -464,7 +493,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // PVC Free record (optional)
     if (cols->pvcfree && labels[record].pvcfree) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -475,7 +504,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // RESUSABLE record (optional)
     if (cols->reusable && labels[record].reusable) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -486,7 +515,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // singleuse record (optional)
     if (cols->singleuse && labels[record].singleuseonly) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -497,7 +526,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // SINGLEPATIENTUSE record (optional)
     if (cols->singlepatientuse && labels[record].singlepatientuse) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -508,7 +537,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // electrosurgicalifu record (optional)
     if (cols->electroifu && labels[record].electroifu) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt++);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -519,7 +548,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // keepdry record (optional)
     if (cols->keepdry && labels[record].keepdry) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         sprintf(g_cnt_str, "%d", g_cnt);
         strcpy(graphic, "GRAPHIC0");
         fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -530,7 +559,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // ECREP record (optional)
     if (cols->ecrep && labels[record].ecrep) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "ECREP");
         if (labels[record].ecrep) {
             fprintf(fpout, "%-30s", "Y");
@@ -544,7 +573,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // BOMLEVEL record (optional)
     if ((cols->bomlevel) && (strlen(labels[record].bomlevel) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "BOMLEVEL");
         fprintf(fpout, "%-30s", labels[record].bomlevel);
         print_graphic_path(fpout, strcat(labels[record].bomlevel, ".tif"));
@@ -553,7 +582,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // EXPDATE record (optional)
     if (cols->expdate) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "EXPDATE");
         if (labels[record].expdate) {
             fprintf(fpout, "%-30s", "Y");
@@ -567,7 +596,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // KEEPAWAYHEAT record (optional)
     if (cols->keepawayheat && labels[record].keepawayheat) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "KEEPAWAYHEAT");
         if (labels[record].keepawayheat) {
             fprintf(fpout, "%-30s", "Y");
@@ -581,7 +610,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOTGRAPHIC record (optional)
     if (cols->lotgraphic) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOTGRAPHIC");
         if (labels[record].lotgraphic) {
             fprintf(fpout, "%-30s", "Y");
@@ -595,7 +624,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // MANUFACTURER record (optional)
     if (cols->manufacturer) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "MANUFACTURER");
         if (labels[record].manufacturer) {
             fprintf(fpout, "%-30s", "Y");
@@ -609,7 +638,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // MFGDATE record (optional)
     if (cols->mfgdate) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "MFGDATE");
         if (labels[record].mfgdate) {
             fprintf(fpout, "%-30s", "Y");
@@ -623,7 +652,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // PHTDEHP record (optional)
     if (cols->phtdehp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "PHTDEHP");
         if (labels[record].phtdehp) {
             fprintf(fpout, "%-30s", "Y");
@@ -637,7 +666,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // PHTBBP record (optional)
     if (cols->phtbbp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "PHTBBP");
         if (labels[record].phtbbp) {
             fprintf(fpout, "%-30s", "Y");
@@ -651,7 +680,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // PHTDINP record (optional)
     if (cols->phtdinp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "PHTDINP");
         if (labels[record].phtdinp) {
             fprintf(fpout, "%-30s", "Y");
@@ -665,7 +694,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // REFNUMBER record (optional)
     if (cols->refnumber && labels[record].refnumber) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "REFNUMBER");
         if (labels[record].refnumber) {
             fprintf(fpout, "%-30s", "Y");
@@ -679,7 +708,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // REF record (optional)
     if (cols->ref && labels[record].ref) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "REF");
         if (labels[record].ref) {
             fprintf(fpout, "%-30s", "Y");
@@ -693,7 +722,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // RXONLY record (optional)
     if (cols->rxonly && labels[record].rxonly) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "RXONLY");
         if (labels[record].rxonly) {
             fprintf(fpout, "%-30s", "Y");
@@ -707,7 +736,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // SERIAL record (optional)
     if (cols->serial && labels[record].serial) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "SERIAL");
         if (labels[record].serial) {
             fprintf(fpout, "%-30s", "Y");
@@ -721,7 +750,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // SIZELOGO record (optional)
     if (cols->sizelogo && labels[record].sizelogo) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "SIZELOGO");
         if (labels[record].sizelogo) {
             fprintf(fpout, "%-30s", "Y");
@@ -735,7 +764,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // TFXLOGO record (optional)
     if (cols->tfxlogo && labels[record].tfxlogo) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "TFXLOGO");
         if (labels[record].tfxlogo) {
             fprintf(fpout, "%-30s", "Y");
@@ -749,7 +778,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // ADDRESS record (optional)
     if ((cols->address) && (strlen(labels[record].address) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "ADDRESS");
         fprintf(fpout, "%-30s", labels[record].address);
         print_graphic_path(fpout, strcat(labels[record].address, ".tif"));
@@ -758,7 +787,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // CAUTIONSTATE record (optional)
     if (cols->cautionstate && labels[record].cautionstatement) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "CAUTIONSTATE");
 
         if (strlen(labels[record].cautionstatement) > 0) {
@@ -782,7 +811,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
     // BARCODE1 record (optional)
     /*if (cols->barcode1) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "BARCODE1");
 
         if (strlen(labels[record].barcode1) > 0) {
@@ -807,7 +836,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 */
     // CE0120 record (optional)
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "CE0120");
         fprintf(fpout, "%-30s", labels[record].cemark);
 
@@ -825,7 +854,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // COOSTATE record (optional)
     if ((cols->coostate) && (strlen(labels[record].coostate) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "COOSTATE");
         fprintf(fpout, "%-30s", labels[record].coostate);
 
@@ -843,7 +872,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // DISTRIBUTEDBY record (optional)
     if ((cols->distby) && (strlen(labels[record].distby) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "DISTRIBUTEDBY");
         fprintf(fpout, "%-30s", labels[record].distby);
 
@@ -861,7 +890,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // ECREPADDRESS record (optional)
     if ((cols->ecrepaddress) && (strlen(labels[record].ecrepaddress) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "ECREPADDRESS");
         fprintf(fpout, "%-30s", labels[record].ecrepaddress);
 
@@ -879,7 +908,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // FLGRAPHIC record (optional)
     if ((cols->flgraphic) && (strlen(labels[record].flgraphic) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "FLGRAPHIC");
         fprintf(fpout, "%-30s", labels[record].flgraphic);
 
@@ -897,7 +926,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LABELGRAPH1 record (optional)
     if ((cols->labelgraph1) && (strlen(labels[record].labelgraph1) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LABELGRAPH1");
         fprintf(fpout, "%-30s", labels[record].labelgraph1);
 
@@ -915,7 +944,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LABELGRAPH2 record (optional)
     if ((cols->labelgraph2) && (strlen(labels[record].labelgraph2) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LABELGRAPH2");
         fprintf(fpout, "%-30s", labels[record].labelgraph2);
 
@@ -933,7 +962,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LATEXSTATEMENT record (optional)
     if (cols->latexstate) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LATEXSTATEMENT");
 
         if (strlen(labels[record].latexstatement) > 0) {
@@ -959,7 +988,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOGO1 record (optional)
     if ((cols->logo1) && (strlen(labels[record].logo1) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOGO1");
         fprintf(fpout, "%-30s", labels[record].logo1);
 
@@ -977,7 +1006,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOGO2 record (optional)
     if ((cols->logo2) && (strlen(labels[record].logo2) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOGO2");
         fprintf(fpout, "%-30s", labels[record].logo2);
         // graphic_name will be converted to its SAP lookup value from
@@ -994,7 +1023,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOGO3 record (optional)
     if ((cols->logo3) && (strlen(labels[record].logo3) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOGO3");
         fprintf(fpout, "%-30s", labels[record].logo3);
         // graphic_name will be converted to its SAP lookup value from
@@ -1011,7 +1040,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOGO4 record (optional)
     if ((cols->logo4) && (strlen(labels[record].logo4) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOGO4");
         fprintf(fpout, "%-30s", labels[record].logo4);
         // graphic_name will be converted to its SAP lookup value from
@@ -1028,7 +1057,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // LOGO5 record (optional)
     if ((cols->logo5) && (strlen(labels[record].logo5) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LOGO5");
         fprintf(fpout, "%-30s", labels[record].logo5);
         // graphic_name will be converted to its SAP lookup value from
@@ -1045,7 +1074,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // MANUFACTUREDBY record (optional)
     if ((cols->manufacturedby) && (strlen(labels[record].manufacturedby) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "MANUFACTUREDBY");
         fprintf(fpout, "%-30s", labels[record].manufacturedby);
         // graphic_name will be converted to its SAP lookup value from
@@ -1062,7 +1091,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // PATENTSTA record (optional)
     if ((cols->patentstatement) && (strlen(labels[record].patentstatement) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "PATENTSTA");
         fprintf(fpout, "%-30s", labels[record].patentstatement);
         // graphic_name will be converted to its SAP lookup value from
@@ -1079,7 +1108,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // STERILESTA record (optional)
     if ((cols->sterilitystatement) && (strlen(labels[record].sterilitystatement) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "STERILESTA");
         fprintf(fpout, "%-30s", labels[record].sterilitystatement);
         // graphic_name will be converted to its SAP lookup value from
@@ -1096,7 +1125,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // STERILITYTYPE record (optional)
     if ((cols->sterilitytype) && (strlen(labels[record].sterilitytype) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "STERILITYTYPE");
         fprintf(fpout, "%-30s", labels[record].sterilitytype);
 
@@ -1114,7 +1143,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // VERSION record (optional)
     if ((cols->version) && (strlen(labels[record].version) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "VERSION");
         fprintf(fpout, "%-30s", labels[record].version);
 
@@ -1132,7 +1161,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // INSERTGRAPHIC record (optional)
     if ((cols->insertgraphic) && (strlen(labels[record].insertgraphic) > 0)) {
-        print_Z2BTLC01000(fpout, ctrl_num);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "INSERTGRAPHIC");
         fprintf(fpout, "%-30s", labels[record].insertgraphic);
 
@@ -1156,6 +1185,10 @@ int main(int argc, char *argv[]) {
 
     // the Label_record array
     Label_record *labels;
+
+    typedef struct control_numbers Ctrl;
+
+    Ctrl idoc = {"2541435", 0, 1, 0, 0};
 
     if (spreadsheet_init() != 0) {
         printf("Could not initialize spreadsheet array. Exiting\n");
@@ -1191,14 +1224,14 @@ int main(int argc, char *argv[]) {
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
     sscanf(argv[1], "%[^.]%*[txt]", outputfile);
-    strcat(outputfile, "_IDOC.txt");
+    strcat(outputfile, "_IDoc.txt");
     printf("outputfile name is %s\n", outputfile);
 
     // check for optional control_number from command line
-    char ctrl_num[8] = "2541435";
+    //char ctrl_num[8] = "2541435";
     if (argc > 2) {
         if ((argv[2] != NULL) && (strcmp(argv[2], "-cn") == 0)) {
-            strcpy(ctrl_num, argv[3]);
+            strcpy(idoc.ctrl_num, argv[3]);
         }
     }
 
@@ -1206,11 +1239,11 @@ int main(int argc, char *argv[]) {
         printf("Could not open output file %s", outputfile);
     }
 
-    if (print_control_record(fpout, ctrl_num) != 0)
+    if (print_control_record(fpout, &idoc) != 0)
         return EXIT_FAILURE;
 
     for (int i = 1; i < spreadsheet_row_number; i++) {
-        print_label_idoc_records(fpout, labels, &columns, i, ctrl_num);
+        print_label_idoc_records(fpout, labels, &columns, i, &idoc);
     }
 
     fclose(fpout);

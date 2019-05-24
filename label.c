@@ -1,3 +1,6 @@
+/**
+ *  label.c
+ */
 #include "label.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +43,7 @@ char *get_token(char *buffer, char tab_str) {
         }
         token[c] = '\0';
         int delimiter_len = delimiter - buffer;
-        memmove(buffer, delimiter, buffer_len - delimiter_len + 1);
+        memmove(buffer, delimiter, (size_t) (buffer_len - delimiter_len + 1));
         // buffer_len = strlen(buffer);
     } else if (buffer_len > 0) { // get last token
         int c = 0;
@@ -118,7 +121,7 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
         stop = strlen(spreadsheet[i]);
 
     int length = stop - start;
-    strncpy(contents, spreadsheet[i] + start, length);
+    strncpy(contents, spreadsheet[i] + start, (size_t) length);
     contents[length] = '\0';
 
     //characteristic_lookup(contents);
