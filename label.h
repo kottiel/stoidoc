@@ -15,6 +15,11 @@
 #define MAX_COLUMNS          1000
 #define MED                    30
 #define LRG                    41
+#define MATERIAL_REC          "02"
+#define LABEL_REC             "03"
+#define TDLINE_REC            "04"
+#define CHAR_REC              "04"
+
 #define TAB                  '\t'
 
 /** global variable spreadsheet that holds the label records  */

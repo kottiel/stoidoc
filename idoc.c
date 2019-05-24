@@ -214,7 +214,8 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             // cols 22-29 - 7 digit control number?
             fprintf(fpout, "%s", ctrl_num);
             fprintf(fpout, "%06d", sequence_number++);
-            fprintf(fpout, "00000002");
+            fprintf(fpout, "000000");
+            fprintf(fpout, MATERIAL_REC);
             fprintf(fpout, "%-18s", labels[record].material);
             fprintf(fpout, "\n");
             strcpy(prev_material, labels[record].material);
