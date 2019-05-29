@@ -780,8 +780,16 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     if ((cols->address) && (strlen(labels[record].address) > 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "ADDRESS");
-        fprintf(fpout, "%-30s", labels[record].address);
-        print_graphic_path(fpout, strcat(labels[record].address, ".tif"));
+        strcpy(graphic_name, labels[record].address);
+        if (graphic_name) {
+            if (strcmp(graphic_name, "N") || strcmp(graphic_name, "No")) {
+                fprintf(fpout, "%-30s", "N");
+                print_graphic_path(fpout, "blank-01.tif");
+            } else {
+                fprintf(fpout, "%-30s", graphic_name);
+                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+            }
+        }
         fprintf(fpout, "\n");
     }
 
@@ -928,16 +936,24 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     if ((cols->labelgraph1) && (strlen(labels[record].labelgraph1) > 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LABELGRAPH1");
-        fprintf(fpout, "%-30s", labels[record].labelgraph1);
 
+        strcpy(graphic_name, labels[record].labelgraph1);
         // graphic_name will be converted to its SAP lookup value from
         // the static lookup array
-        gnp = sap_lookup(labels[record].labelgraph1);
-        if (gnp) {
-            strcpy(graphic_name, gnp);
-            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record].labelgraph1, ".tif"));
+        if (graphic_name) {
+            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+                fprintf(fpout, "%-30s", "N");
+                print_graphic_path(fpout, "blank-01.tif");
+            } else {
+                gnp = sap_lookup(labels[record].labelgraph1);
+                fprintf(fpout, "%-30s", labels[record].labelgraph1);
+                if (gnp) {
+                    strcpy(graphic_name, gnp);
+                    print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+                } else {
+                    print_graphic_path(fpout, strcat(labels[record].labelgraph1, ".tif"));
+                }
+            }
         }
         fprintf(fpout, "\n");
     }
@@ -946,16 +962,24 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     if ((cols->labelgraph2) && (strlen(labels[record].labelgraph2) > 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LABELGRAPH2");
-        fprintf(fpout, "%-30s", labels[record].labelgraph2);
 
+        strcpy(graphic_name, labels[record].labelgraph2);
         // graphic_name will be converted to its SAP lookup value from
         // the static lookup array
-        gnp = sap_lookup(labels[record].labelgraph2);
-        if (gnp) {
-            strcpy(graphic_name, gnp);
-            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record].labelgraph2, ".tif"));
+        if (graphic_name) {
+            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+                fprintf(fpout, "%-30s", "N");
+                print_graphic_path(fpout, "blank-01.tif");
+            } else {
+                gnp = sap_lookup(labels[record].labelgraph2);
+                fprintf(fpout, "%-30s", labels[record].labelgraph2);
+                if (gnp) {
+                    strcpy(graphic_name, gnp);
+                    print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+                } else {
+                    print_graphic_path(fpout, strcat(labels[record].labelgraph2, ".tif"));
+                }
+            }
         }
         fprintf(fpout, "\n");
     }
