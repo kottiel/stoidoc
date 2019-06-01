@@ -16,8 +16,11 @@
 /* end of line new line character    */
 #define LF '\n'
 
-/* length of '_idoc->txt' extension   */
+/* length of '_idoc->txt' extension  */
 #define FILE_EXT_LEN   10
+
+/* length of GTIN-13                 */
+#define GTIN_13        13
 
 /* normal graphics folder path   */
 #define GRAPHICS_PATH  "T:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
@@ -62,6 +65,41 @@ struct control_numbers {
 };
 
 typedef struct control_numbers Ctrl;
+
+/**
+    Returns true (non-zero) if character-string parameter represents
+    a signed or unsigned floating-point number. Otherwise returns
+    false (zero).
+ */
+int isNumeric(char *str) {
+
+    if (str == NULL || str[0] == '\0')
+        return 0;
+    int i = 0;
+    while (str[i] != '\0')
+        if (isdigit(str[i]) == 0)
+            return 0;
+        else
+            i++;
+    return 1;
+}
+
+/**
+    determine the check digit of a GTIN-13 format value
+ */
+int checkDigit(const long *lp) {
+
+    int sum = 0;
+    for (int i = 0; i < (GTIN_13 - 1); i += 2) {
+        sum += lp[i] * 3;
+    }
+
+    for (int i = 1; i < GTIN_13; i += 2) {
+        sum += lp[i];
+    }
+
+    return sum % 10;
+}
 
 /**
     perform a binary search on the lookup array to find the SAP
@@ -215,7 +253,11 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // the name of the graphic to be appended to the graphic path
     char graphic_name[MED];
+
+    // temporary variables to examine field contents
+    char graphic_val[MED];
     char *gnp;
+
     char prev_material[MED];
 
     // MATERIAL record (optional)
@@ -325,15 +367,23 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
 
     // REVISION record (optional)
     if ((cols->revision) && (strlen(labels[record].revision) > 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "REVISION");
-        fprintf(fpout, "%-30s", labels[record].revision);
-        fprintf(fpout, "%-255s", labels[record].revision);
-        fprintf(fpout, "\n");
+        int match = 0;
+        int rev = 0;
+        if ((match = sscanf(labels[record].revision, "R%d", &rev) == 1) && rev >= 0 && rev <= 99) {
+            print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+            fprintf(fpout, "%-30s", "REVISION");
+            fprintf(fpout, "%-30s", labels[record].revision);
+            fprintf(fpout, "%-255s", labels[record].revision);
+            fprintf(fpout, "\n");
+        } else
+            printf("Invalid revision value \"%s\" in record %d. REVISION record skipped.\n",
+                   labels[record].revision, record);
     }
 
     // SIZE record (optional)
-    if ((cols->size) && (strlen(labels[record].size) > 0)) {
+    strncpy(graphic_val, labels[record].size, 1);
+
+    if ((cols->size) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -360,7 +410,8 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // LEVEL record (optional)
-    if ((cols->level) && (strlen(labels[record].level) > 0)) {
+    strncpy(graphic_val, labels[record].level, 1);
+    if ((cols->level) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "LEVEL");
         fprintf(fpout, "%-30s", labels[record].level);
@@ -369,7 +420,8 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // QUANTITY record (optional)
-    if ((cols->quantity) && (strlen(labels[record].quantity) > 0)) {
+    strncpy(graphic_val, labels[record].quantity, 1);
+    if ((cols->quantity) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "QUANTITY");
         fprintf(fpout, "%-30s", labels[record].quantity);
@@ -378,12 +430,25 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // BARCODETEXT record (optional)
-    if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "BARCODETEXT");
-        fprintf(fpout, "%-30s", labels[record].gtin);
-        fprintf(fpout, "%-255s", labels[record].gtin);
-        fprintf(fpout, "\n");
+    strncpy(graphic_val, labels[record].gtin, 1);
+    if ((cols->barcodetext) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+        int match = 0;
+        char *ptr = graphic_val;
+        if (isNumeric(ptr)) {
+            long gtin = strtol(labels[record].gtin, &ptr, 10);
+            if (((strlen(labels[record].gtin) == 14) && (gtin % 10 == checkDigit(&gtin))) ||
+                (strlen(labels[record].gtin) == 13)) {
+                print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+                fprintf(fpout, "%-30s", "BARCODETEXT");
+                fprintf(fpout, "%-30s", labels[record].gtin);
+                fprintf(fpout, "%-255s", labels[record].gtin);
+                fprintf(fpout, "\n");
+            } else
+                printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
+                       labels[record].gtin, record);
+        } else
+            printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
+                   labels[record].gtin, record);
     }
 
     // LTNUMBER record (optional)
