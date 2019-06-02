@@ -87,18 +87,23 @@ int isNumeric(char *str) {
 /**
     determine the check digit of a GTIN-13 format value
  */
-int checkDigit(const long *lp) {
+int checkDigit(long long *lp) {
 
+    long long gtin = *lp;
+    gtin = gtin / 10;
+    short digit;
     int sum = 0;
-    for (int i = 0; i < (GTIN_13 - 1); i += 2) {
-        sum += lp[i] * 3;
+
+    while (gtin > 0) {
+        digit = gtin % 10;
+        sum += 3 * digit;
+        gtin /= 10;
+        digit = gtin % 10;
+        sum += 1 * digit;
+        gtin /= 10;
     }
 
-    for (int i = 1; i < GTIN_13; i += 2) {
-        sum += lp[i];
-    }
-
-    return sum % 10;
+    return (sum % 10 == 0 ? 0 : ((((sum/10) * 10) + 10) - sum));
 }
 
 /**
@@ -247,7 +252,7 @@ int print_control_record(FILE *fpout, Ctrl *idoc) {
     @param labels is the array of label records
     @param label_record is the label index we're accessing
 */
-void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *cols, int record, Ctrl *idoc) {
+int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *cols, int record, Ctrl *idoc) {
 
     // Print the records for a given IDOC (labels[record])
 
@@ -286,21 +291,28 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
             strcpy(prev_material, labels[record].material);
         }
     }
-    // LABEL record (required)
-    fprintf(fpout, "Z2BTLH01000");
-    print_spaces(fpout, 19);
-    fprintf(fpout, "500000000000");
-    // cols 22-29 - 7 digit control number?
-    fprintf(fpout, "%s", idoc->ctrl_num);
-    fprintf(fpout, "%06d", sequence_number);
-    fprintf(fpout, "%06d", idoc->labl_seq_number);
-    idoc->tdline_seq_number = sequence_number;
-    idoc->char_seq_number = sequence_number;
-    sequence_number++;
-    fprintf(fpout, LABEL_REC);
-    fprintf(fpout, "%-18s", labels[record].label);
-    fprintf(fpout, "\n");
-
+    // LABEL record (required). If the contents of .label are not "LBL", program aborts.
+    {
+        char graphic_val[4] = {""};
+        strncpy(graphic_val, labels[record].label, 3);
+        if (strcmp(graphic_val, "LBL") != 0)
+            return 0;
+        else {
+            fprintf(fpout, "Z2BTLH01000");
+            print_spaces(fpout, 19);
+            fprintf(fpout, "500000000000");
+            // cols 22-29 - 7 digit control number?
+            fprintf(fpout, "%s", idoc->ctrl_num);
+            fprintf(fpout, "%06d", sequence_number);
+            fprintf(fpout, "%06d", idoc->labl_seq_number);
+            idoc->tdline_seq_number = sequence_number;
+            idoc->char_seq_number = sequence_number;
+            sequence_number++;
+            fprintf(fpout, LABEL_REC);
+            fprintf(fpout, "%-18s", labels[record].label);
+            fprintf(fpout, "\n");
+        }
+    }
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
     if (cols->tdline) {
         /* get the first token */
@@ -430,27 +442,29 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // BARCODETEXT record (optional)
-    strncpy(graphic_val, labels[record].gtin, 1);
-    if ((cols->barcodetext) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
-        int match = 0;
-        char *ptr = graphic_val;
-        if (isNumeric(ptr)) {
-            long gtin = strtol(labels[record].gtin, &ptr, 10);
-            if (((strlen(labels[record].gtin) == 14) && (gtin % 10 == checkDigit(&gtin))) ||
-                (strlen(labels[record].gtin) == 13)) {
-                print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-                fprintf(fpout, "%-30s", "BARCODETEXT");
-                fprintf(fpout, "%-30s", labels[record].gtin);
-                fprintf(fpout, "%-255s", labels[record].gtin);
-                fprintf(fpout, "\n");
+    {
+        char graphic_val[2] = {""};
+        strncpy(graphic_val, labels[record].gtin, 1);
+        if ((cols->barcodetext) && (labels[record].gtin > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+            int match = 0;
+            char *endptr;
+            if (isNumeric(labels[record].gtin)) {
+                long long gtin = strtoll(labels[record].gtin, &endptr, 10);
+                if (((strlen(labels[record].gtin) == 14) && (gtin % 10 == checkDigit(&gtin))) ||
+                    (strlen(labels[record].gtin) == 13)) {
+                    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+                    fprintf(fpout, "%-30s", "BARCODETEXT");
+                    fprintf(fpout, "%-30s", labels[record].gtin);
+                    fprintf(fpout, "%-255s", labels[record].gtin);
+                    fprintf(fpout, "\n");
+                } else
+                    printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
+                           labels[record].gtin, record);
             } else
-                printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
+                printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
-        } else
-            printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
-                   labels[record].gtin, record);
+        }
     }
-
     // LTNUMBER record (optional)
     if ((cols->ltnumber) && (strlen(labels[record].ipn) > 0)) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
@@ -1213,21 +1227,22 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
     }
 
     // STERILITYTYPE record (optional)
-    if ((cols->sterilitytype) && (strlen(labels[record].sterilitytype) > 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "STERILITYTYPE");
-        fprintf(fpout, "%-30s", labels[record].sterilitytype);
+        strncpy(graphic_val, labels[record].sterilitytype, 1);
+        if ((cols->sterilitytype) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+            print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+            fprintf(fpout, "%-30s", "STERILITYTYPE");
+            fprintf(fpout, "%-30s", labels[record].sterilitytype);
 
-        // graphic_name will be converted to its SAP lookup value from
-        // the static lookup array
-        gnp = sap_lookup(labels[record].sterilitytype);
-        if (gnp) {
-            strcpy(graphic_name, gnp);
-            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record].sterilitytype, ".tif"));
-        }
-        fprintf(fpout, "\n");
+            // graphic_name will be converted to its SAP lookup value from
+            // the static lookup array
+            gnp = sap_lookup(labels[record].sterilitytype);
+            if (gnp) {
+                strcpy(graphic_name, gnp);
+                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+            } else {
+                print_graphic_path(fpout, strcat(labels[record].sterilitytype, ".tif"));
+            }
+            fprintf(fpout, "\n");
     }
 
     // VERSION record (optional)
@@ -1265,6 +1280,7 @@ void print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *
         }
         fprintf(fpout, "\n");
     }
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -1331,8 +1347,14 @@ int main(int argc, char *argv[]) {
     if (print_control_record(fpout, &idoc) != 0)
         return EXIT_FAILURE;
 
-    for (int i = 1; i < spreadsheet_row_number; i++) {
-        print_label_idoc_records(fpout, labels, &columns, i, &idoc);
+    int i = 1;
+    while (i < spreadsheet_row_number) {
+        if ((print_label_idoc_records(fpout, labels, &columns, i, &idoc)))
+           i++;
+        else {
+            printf("Content error in text-delimited spreadsheet, line %d. Aborting.\n", i);
+            return EXIT_FAILURE;
+        }
     }
 
     fclose(fpout);

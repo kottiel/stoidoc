@@ -630,6 +630,9 @@ void sort_labels(Label_record *labels) {
 
         swap_label_records(labels, i, min_index);
     }
+
+    for (int i = 0; i < spreadsheet_row_number; i++)
+        printf("%s\n", labels[i].label);
 }
 
 void swap_label_records(Label_record *labels, int i, int min_index) {
