@@ -142,10 +142,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         char *token = get_token(buffer, tab_str);
 
         if (strcmp(token, "LABEL") == 0) {
-            cols->label = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].label, contents);
+                if (strlen(contents) > 0)
+                    cols->label = count;
             }
         } else if (strcmp(token, "MATERIAL") == 0) {
             cols->material = count;
@@ -162,10 +163,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 strcpy(labels[i].tdline, contents);
             }
         } else if (strcmp(token, "ADDRESS") == 0) {
-            cols->address = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].address, contents);
+                if (strlen(contents) > 0)
+                    cols->address = count;
             }
             /*} else if (strcmp(token, "BARCODE1") == 0) {
                 cols->barcode1 = count;
@@ -174,16 +176,18 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     strcpy(labels[i].barcode1, contents);
                 }*/
         } else if (strcmp(token, "BARCODETEXT") == 0) {
-            cols->barcodetext = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].gtin, contents);
+                if (strlen(contents) > 0)
+                    cols->barcodetext = count;
             }
         } else if (strcmp(token, "BOMLEVEL") == 0) {
-            cols->bomlevel = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].bomlevel, contents);
+                if (strlen(contents) > 0)
+                    cols->bomlevel = count;
             }
         } else if (strcmp(token, "CAUTION") == 0) {
             cols->caution = count;
@@ -330,12 +334,16 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 else
                     labels[i].latexfree = false;
             }
+
+            // If any cells in the column contain content, LATEXSTATEMENT will appear in the IDoc
         } else if (strcmp(token, "LATEXSTATEMENT") == 0) {
-            cols->latexstate = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].latexstatement, contents);
+                if (strlen(contents) > 0)
+                    cols->latexstate = count;
             }
+
         } else if (strcmp(token, "LEVEL") == 0) {
             cols->level = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -412,11 +420,12 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].manufacturer = false;
             }
         } else if (strcmp(token, "MFGDATE") == 0) {
-            cols->mfgdate = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0)
+                if (strcmp("Y", contents) == 0) {
                     labels[i].mfgdate = true;
+                    cols->mfgdate = count;
+                }
                 else
                     labels[i].mfgdate = false;
             }
@@ -514,10 +523,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].reusable = false;
             }
         } else if (strcmp(token, "REVISION") == 0) {
-            cols->revision = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].revision, contents);
+                if (strlen(contents) > 0)
+                    cols->revision = count;
             }
         } else if (strcmp(token, "RXONLY") == 0) {
             cols->rxonly = count;
@@ -556,10 +566,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].singlepatientuse = false;
             }
         } else if (strcmp(token, "SIZE") == 0) {
-            cols->size = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].size, contents);
+                if (strlen(contents) > 0)
+                    cols->size = count;
             }
         } else if (strcmp(token, "SIZELOGO") == 0) {
             cols->sizelogo = count;
@@ -570,11 +581,14 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 else
                     labels[i].sizelogo = false;
             }
+            // If any cells in the column contain content, STERILITYTYPE will appear in the IDoc
         } else if (strcmp(token, "STERILITYTYPE") == 0) {
-            cols->sterilitytype = count;
+
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].sterilitytype, contents);
+                if (strlen(contents) > 0)
+                    cols->sterilitytype = count;
             }
         } else if (strcmp(token, "STERILESTA") == 0) {
             cols->sterilitystatement = count;
