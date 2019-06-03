@@ -64,7 +64,7 @@ typedef struct {
     char level[11];
     char label[10];
     char ipn[10];
-    char quantity[9];
+    char quantity[MED];
     char template[8];
     char bomlevel[5];
     char revision[4];

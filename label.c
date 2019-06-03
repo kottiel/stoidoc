@@ -237,7 +237,8 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].distby, contents);
             }
-        } else if (strcmp(token, "DONOTUSEDAM") == 0) {
+        } else if ((strcmp(token, "DONOTUSEDAM") == 0) ||
+                   (strcmp(token, "DONOTPAKDAM") == 0)) {
             cols->donotusedam = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
@@ -412,11 +413,14 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].manufacturer = false;
             }
         } else if (strcmp(token, "MFGDATE") == 0) {
-            cols->mfgdate = count;
+            cols->mfgdate = 0;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0)
+                if ((strcasecmp("Y", contents) == 0) ||
+                    (strcasecmp("YES", contents) == 0)) {
                     labels[i].mfgdate = true;
+                    cols->mfgdate = count;
+                }
                 else
                     labels[i].mfgdate = false;
             }
@@ -520,14 +524,18 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 strcpy(labels[i].revision, contents);
             }
         } else if (strcmp(token, "RXONLY") == 0) {
-            cols->rxonly = count;
+            cols->rxonly = 0;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0)
+                if ((strcasecmp("Y", contents) == 0) ||
+                    (strcasecmp("YES", contents) == 0)) {
                     labels[i].rxonly = true;
+                    cols->rxonly = count;
+                }
                 else
                     labels[i].rxonly = false;
             }
+
         } else if (strcmp(token, "SINGLEUSE") == 0) {
             cols->singleuse = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -630,9 +638,6 @@ void sort_labels(Label_record *labels) {
 
         swap_label_records(labels, i, min_index);
     }
-
-    for (int i = 0; i < spreadsheet_row_number; i++)
-        printf("%s\n", labels[i].label);
 }
 
 void swap_label_records(Label_record *labels, int i, int min_index) {
