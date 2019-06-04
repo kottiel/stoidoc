@@ -53,6 +53,11 @@ typedef struct {
     char logo3[MED];
     char logo4[MED];
     char logo5[MED];
+    char mdr1[MED];
+    char mdr2[MED];
+    char mdr3[MED];
+    char mdr4[MED];
+    char mdr5[MED];
     char manufacturedby[MED];
     char patentstatement[MED];
     char size[MED];
@@ -137,6 +142,11 @@ typedef struct {
     unsigned short logo3;
     unsigned short logo4;
     unsigned short logo5;
+    unsigned short mdr1;
+    unsigned short mdr2;
+    unsigned short mdr3;
+    unsigned short mdr4;
+    unsigned short mdr5;
     unsigned short lotgraphic;
     unsigned short ltnumber;
     unsigned short maninbox;
