@@ -221,12 +221,14 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_contents
 
     char graphic_val[3] = {""};
 
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+    fprintf(fpout, "%-30s", col_name);
+    fprintf(fpout, "%-30s", col_contents);
+
     strncpy(graphic_val, col_contents, 2);
     if (strlen(graphic_val) > 0) {
         if ((strcasecmp(graphic_val, "N") != 0) || (strcasecmp(graphic_val, "No") == 0)) {
-            print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-            fprintf(fpout, "%-30s", col_name);
-            fprintf(fpout, "%-30s", col_contents);
+
 
             // graphic_name will be converted to its SAP lookup value from
             // the static lookup array
