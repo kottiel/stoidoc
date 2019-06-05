@@ -39,18 +39,18 @@ int sequence_number = 1;
 
 // Alphabetized SAP Characteristic Value Lookup
 char lookup[][2][LRG] = {
-        {"CE",          "CE Mark"},
-        {"CE0120",      "CE_0120_Below"},
-        {"CE0123",      "CE123"},
-        {"CE0050",      "CE0050"},
+        {"CE", "CE Mark"},
+        {"CE0120", "CE_0120_Below"},
+        {"CE0123", "CE123"},
+        {"CE0050", "CE0050"},
         {"HEMO_AUTO_L", "HemoAutoL"},
-        {"HEMO_L",      "HemolokL"},
-        {"HEMO_ML",     "HemolokML"},
-        {"HMOCLPTRD",   "HmoclpTrd"},
-        {"NO",          "blank-01"},
-        {"N",           "blank-01"},
-        {"STERILEEO",   "Sterile_EO"},
-        {"WECK_LOGO",   "Wecklogo"}
+        {"HEMO_L", "HemolokL"},
+        {"HEMO_ML", "HemolokML"},
+        {"HMOCLPTRD", "HmoclpTrd"},
+        {"NO", "blank-01"},
+        {"N", "blank-01"},
+        {"STERILEEO", "Sterile_EO"},
+        {"WECK_LOGO", "Wecklogo"}
 };
 
 int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
@@ -698,48 +698,22 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         fprintf(fpout, "\n");
     }
 
-    // ECREP record (optional)
-    if (cols->ecrep) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "ECREP");
-        if (labels[record].ecrep) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "EC Rep.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+/******************************************************************************/
+    // ECREP record (optional: N / value)
+    if (cols->ecrep)
+        print_boolean_record(fpout, "ECREP", labels[record].ecrep, "EC Rep.tif", idoc);
 
+/******************************************************************************/
     // EXPDATE record (optional)
-    if (cols->expdate) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "EXPDATE");
-        if (labels[record].expdate) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "Expiration Date.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->expdate)
+        print_boolean_record(fpout, "EXPDATE", labels[record].ecrep, "Expiration Date.tif", idoc);
 
+/******************************************************************************/
     // KEEPAWAYHEAT record (optional)
-    if (cols->keepawayheat && labels[record].keepawayheat) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "KEEPAWAYHEAT");
-        if (labels[record].keepawayheat) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "KEEPAWAYHEAT.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->keepawayheat)
+        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, "KeepAwayHeat.tif", idoc);
 
+/******************************************************************************/
     // LOTGRAPHIC record (optional)
     if (cols->lotgraphic) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
@@ -768,66 +742,32 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         fprintf(fpout, "\n");
     }
 
+/******************************************************************************/
     // MFGDATE record (optional)
     if (cols->mfgdate)
         print_boolean_record(fpout, "MFGDATE", labels[record].mfgdate, "DateofManufacture.tif", idoc);
 
+/******************************************************************************/
     // PHTDEHP record (optional)
-    if (cols->phtdehp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "PHTDEHP");
-        if (labels[record].phtdehp) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "PHT-DEHP.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->phtdehp)
+        print_boolean_record(fpout, "PHTDEHP", labels[record].phtdehp, "PHT-DEHP.tif", idoc);
 
+/******************************************************************************/
     // PHTBBP record (optional)
-    if (cols->phtbbp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "PHTBBP");
-        if (labels[record].phtbbp) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "PHT-BBP.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->phtbbp)
+        print_boolean_record(fpout, "PHTBBP", labels[record].phtbbp, "PHT-BBP.tif", idoc);
 
+/******************************************************************************/
     // PHTDINP record (optional)
-    if (cols->phtdinp && labels[record].phtdehp) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "PHTDINP");
-        if (labels[record].phtdinp) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "PHT-DINP.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->phtdinp)
+        print_boolean_record(fpout, "PHTDINP", labels[record].phtdinp, "PHT-DINP.tif", idoc);
 
+/******************************************************************************/
     // REFNUMBER record (optional)
-    if (cols->refnumber && labels[record].refnumber) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "REFNUMBER");
-        if (labels[record].refnumber) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "REF.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->refnumber)
+        print_boolean_record(fpout, "REFNUMBER", labels[record].refnumber, "REF.tif", idoc);
 
+/******************************************************************************/
     // REF record (optional)
     if (cols->ref && labels[record].ref) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
@@ -855,34 +795,16 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
         fprintf(fpout, "\n");
     }
-
+/******************************************************************************/
     // SERIAL record (optional)
-    if (cols->serial && labels[record].serial) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "SERIAL");
-        if (labels[record].serial) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "Serial Number.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->serial)
+        print_boolean_record(fpout, "SERIAL", labels[record].serial, "Serial Number.tif", idoc);
+/******************************************************************************/
 
     // SIZELOGO record (optional)
-    if (cols->sizelogo && labels[record].sizelogo) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "SIZELOGO");
-        if (labels[record].sizelogo) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "blank-01.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    /*if (cols->sizelogo) {
+        print_boolean_record(fpout, "SIZELOGO", labels[record].sizelogo, "Size Logo.tif", idoc);*/
+
 /******************************************************************************/
     // TFXLOGO record (Optional: Y / N / blank)
     if (cols->tfxlogo)
@@ -897,8 +819,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             print_graphic_column_header(fpout, "ADDRESS", labels[record].address, idoc);
 
 /******************************************************************************/
-
-    // CAUTIONSTATE record (optional)
+    // CAUTIONSTATE record (optional: N / value)
     if (cols->cautionstate)
         print_graphic_column_header(fpout, "CAUTIONSTATE", labels[record].cautionstatement, idoc);
 
@@ -1032,11 +953,12 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
         fprintf(fpout, "\n");
     }
+/******************************************************************************/
+    // LATEXSTATEMENT record (optional: N / value)
+    if (cols->latexstate)
+        print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, idoc);
+/******************************************************************************/
 
-    /*// LATEXSTATEMENT record (optional)
-        if (cols->latexstate)
-            print_graphic_column_header(fpout,"LATEXSTATEMENT", labels[record].latexstatement, idoc);
-    */
     // LOGO1 record (optional)
     if (cols->logo1)
         print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, idoc);
@@ -1224,16 +1146,16 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         fprintf(fpout,
                 "\n");
     }
-
-/*// STERILITYTYPE record (optional)
+/******************************************************************************/
+    // STERILITYTYPE record (optional)
     if (cols->sterilitytype)
-        print_graphic_column_header(fpout,
-                                    "STERILITYTYPE", labels[record].sterilitytype, idoc);
+        print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, idoc);
 
+/******************************************************************************/
 // BOMLEVEL record (optional)
     if (cols->bomlevel)
-        print_graphic_column_header(fpout,
-                                    "BOMLEVEL", labels[record].bomlevel, idoc);*/
+        print_graphic_column_header(fpout, "BOMLEVEL", labels[record].bomlevel, idoc);
+/******************************************************************************/
 
 // VERSION record (optional)
     if ((cols->version) && (
