@@ -105,6 +105,14 @@ int peek_nth_token(int n, const char *buffer, char delimiter) {
     return -1;
 }
 
+int equals_yes(char *field) {
+    return ((strcasecmp(field, "Y") == 0) || (strcasecmp(field, "Yes") == 0));
+}
+
+int equals_no(char *field) {
+    return ((strcasecmp(field, "N") == 0) || (strcasecmp(field, "No") == 0));
+}
+
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str) {
 
     int start = 0;
@@ -603,15 +611,17 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].template, contents);
             }
+/*************************************************************************/
         } else if (strcmp(token, "TFXLOGO") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].tfxlogo = true;
                     cols->tfxlogo = count;
                 } else
                     labels[i].tfxlogo = false;
             }
+/*************************************************************************/
         } else if (strcmp(token, "VERSION") == 0) {
             cols->version = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {

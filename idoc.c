@@ -173,10 +173,6 @@ void read_spreadsheet(FILE *fp) {
     }
 }
 
-bool equals_yes(char *field) {
-    return ((strcasecmp(field, "Y") == 0) || (strcasecmp(field, "Yes") == 0));
-}
-
 /**
     prints a specified number of spaces to a file stream
     @param fpout points to the output file
@@ -221,52 +217,45 @@ void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
     or a value requiring SAP lookup and substitution, or a value that translates
     into a graphic name with a .tif suffix.
  */
-void print_graphic_column_header(FILE *fpout, char *col_name, char *col_contents, Ctrl *idoc) {
+void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, Ctrl *idoc) {
 
-    char graphic_val[3] = {'\0'};
     char cell_contents[MED];
-    strncpy(cell_contents, col_contents, MED - 1);
-
-    strncpy(graphic_val, col_contents, 2);
-
-    // don't print anything if the cell was blank
-    if (strlen(graphic_val) > 0) {
-
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", col_name);
-        fprintf(fpout, "%-30s", col_contents);
-
-        // some values in the column are populated, so if there's a 'N' print blank-01.tif
-        if ((strcasecmp(graphic_val, "N") == 0) || (strcasecmp(graphic_val, "No") == 0)) {
-            //fprintf(fpout, "%-30s", graphic_val);
-            print_graphic_path(fpout, "blank-01.tif");
-        } else {
-            // graphic_name will be converted to its SAP lookup value from
-            // the static lookup array
-            char *gnp = sap_lookup(cell_contents);
-            if (gnp) {
-                char graphic_name[MED];
-                strcpy(graphic_name, gnp);
-                print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-            } else {
-                print_graphic_path(fpout, strcat(cell_contents, ".tif"));
-            }
-        }
-        fprintf(fpout, "\n");
-    }
-}
-
-/**
-    print a passed column-field that contains a "N" or "NO," (case insensitive),
-    or a value requiring SAP lookup and substitution, or a value that translates
-    into a graphic name with a .tif suffix.
- */
-void print_boolean_record(FILE *fpout, char *col_name, bool col_contents, char *graphic_name, Ctrl *idoc) {
+    strncpy(cell_contents, col_value, MED - 1);
 
     print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
     fprintf(fpout, "%-30s", col_name);
 
-    if (col_contents) {
+    if (strlen(cell_contents) > 0) {
+
+        fprintf(fpout, "%-30s", col_value);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
+        char *gnp = sap_lookup(col_value);
+        if (gnp) {
+            char graphic_name[MED];
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else {
+            print_graphic_path(fpout, strcat(cell_contents, ".tif"));
+        }
+    } else {
+        fprintf(fpout, "%-30s", "N");
+        print_graphic_path(fpout, "blank-01.tif");
+    }
+    fprintf(fpout, "\n");
+}
+
+/**
+    print a passed column-field that contains a "Y" or a "N." If "Y," print the hard-coded
+    value associated with the graphic and a .tif suffix.
+ */
+void print_boolean_record(FILE *fpout, char *col_name, bool value, char *graphic_name, Ctrl *idoc) {
+
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+    fprintf(fpout, "%-30s", col_name);
+
+    if (value) {
         fprintf(fpout, "%-30s", "Y");
         print_graphic_path(fpout, graphic_name);
     } else {
@@ -894,29 +883,20 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
         fprintf(fpout, "\n");
     }
-
+/******************************************************************************/
     // TFXLOGO record (Optional: Y / N / blank)
-    if (cols->tfxlogo) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "TFXLOGO");
-        if (labels[record].tfxlogo) {
-            fprintf(fpout, "%-30s", "Y");
-            print_graphic_path(fpout, "TeleflexMedical.tif");
-        } else {
-            fprintf(fpout, "%-30s", "N");
-            print_graphic_path(fpout, "blank-01.tif");
-        }
-        fprintf(fpout, "\n");
-    }
+    if (cols->tfxlogo)
+        print_boolean_record(fpout, "TFXLOGO", labels[record].tfxlogo, "TeleflexMedical.tif", idoc);
 
 /******************************************************************************/
     // ADDRESS record (Optional: Y / N / value / blank)
-    if (cols->address) {
-        if (equals_yes(labels[record].address)) {
-            print_graphic_column_header(fpout, "ADDRESS", "TFX3LineAdd13i", idoc);
-        } else
+    if (cols->address)
+        if (equals_yes(labels[record].address) || equals_no(labels[record].address))
+            print_boolean_record(fpout, "ADDRESS", labels[record].address, "TFX3LineAdd13i", idoc);
+        else
             print_graphic_column_header(fpout, "ADDRESS", labels[record].address, idoc);
-    }
+
+/******************************************************************************/
 
     // CAUTIONSTATE record (optional)
     if (cols->cautionstate)
@@ -924,212 +904,144 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
 /******************************************************************************/
 
-
-// CE0120 record (optional)
+    // CE0120 record (optional)
     if ((cols->ce0120) && (strlen(labels[record].cemark) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "CE0120");
-        fprintf(fpout,
-                "%-30s", labels[record].cemark);
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "CE0120");
+        fprintf(fpout, "%-30s", labels[record].cemark);
 
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].cemark);
         if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
         } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .cemark, ".tif"));
+            print_graphic_path(fpout, strcat(labels[record].cemark, ".tif"));
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
-// COOSTATE record (optional)
-    if ((cols->coostate) && (
-            strlen(labels[record]
-                           .coostate) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "COOSTATE");
-        fprintf(fpout,
-                "%-30s", labels[record].coostate);
+    // COOSTATE record (optional)
+    if ((cols->coostate) && (strlen(labels[record].coostate) > 0)) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "COOSTATE");
+        fprintf(fpout, "%-30s", labels[record].coostate);
 
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].coostate);
         if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
         } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .coostate, ".tif"));
+            print_graphic_path(fpout, strcat(labels[record].coostate, ".tif"));
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
-// DISTRIBUTEDBY record (optional)
-    if ((cols->distby) && (
-            strlen(labels[record]
-                           .distby) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "DISTRIBUTEDBY");
-        fprintf(fpout,
-                "%-30s", labels[record].distby);
+    // DISTRIBUTEDBY record (optional)
+    if ((cols->distby) && (strlen(labels[record].distby) > 0)) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "DISTRIBUTEDBY");
+        fprintf(fpout, "%-30s", labels[record].distby);
 
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].distby);
         if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
         } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .distby, ".tif"));
+            print_graphic_path(fpout, strcat(labels[record].distby, ".tif"));
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
     // ECREPADDRESS record (optional)
     if (cols->ecrepaddress)
         print_graphic_column_header(fpout, "ECREPADDRESS", labels[record].ecrepaddress, idoc);
 
-// FLGRAPHIC record (optional)
-    if ((cols->flgraphic) && (
-            strlen(labels[record]
-                           .flgraphic) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "FLGRAPHIC");
-        fprintf(fpout,
-                "%-30s", labels[record].flgraphic);
+    // FLGRAPHIC record (optional)
+    if ((cols->flgraphic) && (strlen(labels[record].flgraphic) > 0)) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "FLGRAPHIC");
+        fprintf(fpout, "%-30s", labels[record].flgraphic);
 
-// graphic_name will be converted to its SAP lookup value from
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].flgraphic);
         if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
         } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .flgraphic, ".tif"));
+            print_graphic_path(fpout, strcat(labels[record].flgraphic, ".tif"));
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
-// LABELGRAPH1 record (optional)
-    if ((cols->labelgraph1) && (
-            strlen(labels[record]
-                           .labelgraph1) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "LABELGRAPH1");
+    // LABELGRAPH1 record (optional)
+    if ((cols->labelgraph1) && (strlen(labels[record].labelgraph1) > 0)) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "LABELGRAPH1");
 
-        strcpy(graphic_name, labels[record]
-                .labelgraph1);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        strcpy(graphic_name, labels[record].labelgraph1);
+
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         if (graphic_name) {
-            if ((
-                        strcmp(graphic_name,
-                               "N") == 0) || (
-                        strcmp(graphic_name,
-                               "No") == 0)) {
-                fprintf(fpout,
-                        "%-30s", "N");
-                print_graphic_path(fpout,
-                                   "blank-01.tif");
+            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+                fprintf(fpout, "%-30s", "N");
+                print_graphic_path(fpout, "blank-01.tif");
             } else {
                 gnp = sap_lookup(labels[record].labelgraph1);
-                fprintf(fpout,
-                        "%-30s", labels[record].labelgraph1);
+                fprintf(fpout, "%-30s", labels[record].labelgraph1);
                 if (gnp) {
-                    strcpy(graphic_name, gnp
-                    );
-                    print_graphic_path(fpout, strcat(graphic_name,
-                                                     ".tif"));
+                    strcpy(graphic_name, gnp);
+                    print_graphic_path(fpout, strcat(graphic_name, ".tif"));
                 } else {
-                    print_graphic_path(fpout, strcat(labels[record]
-                                                             .labelgraph1, ".tif"));
+                    print_graphic_path(fpout, strcat(labels[record].labelgraph1, ".tif"));
                 }
             }
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
-// LABELGRAPH2 record (optional)
-    if ((cols->labelgraph2) && (
-            strlen(labels[record]
-                           .labelgraph2) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "LABELGRAPH2");
+    // LABELGRAPH2 record (optional)
+    if ((cols->labelgraph2) && (strlen(labels[record].labelgraph2) > 0)) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "LABELGRAPH2");
 
-        strcpy(graphic_name, labels[record]
-                .labelgraph2);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        strcpy(graphic_name, labels[record].labelgraph2);
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         if (graphic_name) {
-            if ((
-                        strcmp(graphic_name,
-                               "N") == 0) || (
-                        strcmp(graphic_name,
-                               "No") == 0)) {
-                fprintf(fpout,
-                        "%-30s", "N");
-                print_graphic_path(fpout,
-                                   "blank-01.tif");
+            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+                fprintf(fpout, "%-30s", "N");
+                print_graphic_path(fpout, "blank-01.tif");
             } else {
                 gnp = sap_lookup(labels[record].labelgraph2);
-                fprintf(fpout,
-                        "%-30s", labels[record].labelgraph2);
+                fprintf(fpout, "%-30s", labels[record].labelgraph2);
                 if (gnp) {
-                    strcpy(graphic_name, gnp
-                    );
-                    print_graphic_path(fpout, strcat(graphic_name,
-                                                     ".tif"));
+                    strcpy(graphic_name, gnp);
+                    print_graphic_path(fpout, strcat(graphic_name, ".tif"));
                 } else {
-                    print_graphic_path(fpout, strcat(labels[record]
-                                                             .labelgraph2, ".tif"));
+                    print_graphic_path(fpout, strcat(labels[record].labelgraph2, ".tif"));
                 }
             }
         }
-        fprintf(fpout,
-                "\n");
+        fprintf(fpout, "\n");
     }
 
-/*// LATEXSTATEMENT record (optional)
-    if (cols->latexstate)
-        print_graphic_column_header(fpout,
-                                    "LATEXSTATEMENT", labels[record].latexstatement, idoc);
-*/
+    /*// LATEXSTATEMENT record (optional)
+        if (cols->latexstate)
+            print_graphic_column_header(fpout,"LATEXSTATEMENT", labels[record].latexstatement, idoc);
+    */
     // LOGO1 record (optional)
     if (cols->logo1)
         print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, idoc);
 
-// LOGO2 record (optional)
+    // LOGO2 record (optional)
     if ((cols->logo2) && (
             strlen(labels[record]
                            .logo2) > 0)) {
@@ -1139,8 +1051,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 "%-30s", "LOGO2");
         fprintf(fpout,
                 "%-30s", labels[record].logo2);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].logo2);
         if (gnp) {
             strcpy(graphic_name, gnp
@@ -1155,7 +1067,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 "\n");
     }
 
-// LOGO3 record (optional)
+    // LOGO3 record (optional)
     if ((cols->logo3) && (
             strlen(labels[record]
                            .logo3) > 0)) {
@@ -1165,14 +1077,12 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 "%-30s", "LOGO3");
         fprintf(fpout,
                 "%-30s", labels[record].logo3);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].logo3);
         if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
+            strcpy(graphic_name, gnp);
+            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
         } else {
             print_graphic_path(fpout, strcat(labels[record]
                                                      .logo3, ".tif"));
@@ -1181,7 +1091,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 "\n");
     }
 
-// LOGO4 record (optional)
+    // LOGO4 record (optional)
     if ((cols->logo4) && (
             strlen(labels[record]
                            .logo4) > 0)) {
@@ -1191,8 +1101,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 "%-30s", "LOGO4");
         fprintf(fpout,
                 "%-30s", labels[record].logo4);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
+        // graphic_name will be converted to its SAP lookup value from
+        // the static lookup array
         gnp = sap_lookup(labels[record].logo4);
         if (gnp) {
             strcpy(graphic_name, gnp
