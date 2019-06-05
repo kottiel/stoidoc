@@ -1064,36 +1064,22 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         fprintf(fpout,
                 "\n");
     }
-
+/******************************************************************************/
     // MDR1 record (optional)
     if (cols->mdr1)
         print_graphic_column_header(fpout, "MDR1", labels[record].mdr1, idoc);
 
+/******************************************************************************/
+    // MDR2 record (optional)
+    if (cols->mdr2)
+        print_graphic_column_header(fpout, "MDR2", labels[record].mdr1, idoc);
+
+/******************************************************************************/
 // MANUFACTUREDBY record (optional)
-    if ((cols->manufacturedby) && (
-            strlen(labels[record]
-                           .manufacturedby) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "MANUFACTUREDBY");
-        fprintf(fpout,
-                "%-30s", labels[record].manufacturedby);
-// graphic_name will be converted to its SAP lookup value from
-// the static lookup array
-        gnp = sap_lookup(labels[record].manufacturedby);
-        if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .manufacturedby, ".tif"));
-        }
-        fprintf(fpout,
-                "\n");
-    }
+    if (cols->manufacturedby)
+        print_graphic_column_header(fpout, "MANUFACTUREDBY", labels[record].manufacturedby, idoc);
+
+/******************************************************************************/
 
 // PATENTSTA record (optional)
     if ((cols->patentstatement) && (
