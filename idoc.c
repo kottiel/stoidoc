@@ -23,7 +23,7 @@
 #define GTIN_13        13
 
 /* normal graphics folder path   */
-#define GRAPHICS_PATH  "T:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
+#define GRAPHICS_PATH  "C:\\users\\jkottiel\\Documents\\1 - Teleflex\\Labeling Resources\\Personal Graphics\\"
 
 /* global variable that holds the spreadsheets specific column headings  */
 char **spreadsheet;
@@ -39,18 +39,18 @@ int sequence_number = 1;
 
 // Alphabetized SAP Characteristic Value Lookup
 char lookup[][2][LRG] = {
-        {"CE", "CE Mark"},
-        {"CE0120", "CE_0120_Below"},
-        {"CE0123", "CE123"},
-        {"CE0050", "CE0050"},
+        {"CE",          "CE Mark"},
+        {"CE0120",      "CE_0120_Below"},
+        {"CE0123",      "CE123"},
+        {"CE0050",      "CE0050"},
         {"HEMO_AUTO_L", "HemoAutoL"},
-        {"HEMO_L", "HemolokL"},
-        {"HEMO_ML", "HemolokML"},
-        {"HMOCLPTRD", "HmoclpTrd"},
-        {"NO", "blank-01"},
-        {"N", "blank-01"},
-        {"STERILEEO", "Sterile_EO"},
-        {"WECK_LOGO", "Wecklogo"}
+        {"HEMO_L",      "HemolokL"},
+        {"HEMO_ML",     "HemolokML"},
+        {"HMOCLPTRD",   "HmoclpTrd"},
+        {"NO",          "blank-01"},
+        {"N",           "blank-01"},
+        {"STERILEEO",   "Sterile_EO"},
+        {"WECK_LOGO",   "Wecklogo"}
 };
 
 int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
@@ -705,8 +705,18 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
 /******************************************************************************/
     // EXPDATE record (optional)
-    if (cols->expdate)
-        print_boolean_record(fpout, "EXPDATE", labels[record].ecrep, "Expiration Date.tif", idoc);
+    if (cols->expdate) {
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", "EXPDATE");
+        if (labels[record].expdate) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, "Expiration Date.tif");
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
+    }
 
 /******************************************************************************/
     // KEEPAWAYHEAT record (optional)
@@ -957,37 +967,18 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     // LATEXSTATEMENT record (optional: N / value)
     if (cols->latexstate)
         print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, idoc);
-/******************************************************************************/
 
+/******************************************************************************/
     // LOGO1 record (optional)
     if (cols->logo1)
         print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, idoc);
 
+/******************************************************************************/
     // LOGO2 record (optional)
-    if ((cols->logo2) && (
-            strlen(labels[record]
-                           .logo2) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "LOGO2");
-        fprintf(fpout,
-                "%-30s", labels[record].logo2);
-        // graphic_name will be converted to its SAP lookup value from
-        // the static lookup array
-        gnp = sap_lookup(labels[record].logo2);
-        if (gnp) {
-            strcpy(graphic_name, gnp
-            );
-            print_graphic_path(fpout, strcat(graphic_name,
-                                             ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .logo2, ".tif"));
-        }
-        fprintf(fpout,
-                "\n");
-    }
+    if (cols->logo2)
+        print_graphic_column_header(fpout, "LOGO2", labels[record].logo2, idoc);
+
+/******************************************************************************/
 
     // LOGO3 record (optional)
     if ((cols->logo3) && (
@@ -1072,7 +1063,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 /******************************************************************************/
     // MDR2 record (optional)
     if (cols->mdr2)
-        print_graphic_column_header(fpout, "MDR2", labels[record].mdr1, idoc);
+        print_graphic_column_header(fpout, "MDR2", labels[record].mdr2, idoc);
 
 /******************************************************************************/
 // MANUFACTUREDBY record (optional)

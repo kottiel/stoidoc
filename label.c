@@ -371,18 +371,25 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].level, contents);
             }
+/******************************************************************************/
         } else if (strcmp(token, "LOGO1") == 0) {
-            cols->logo1 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].logo1, contents);
+                if (strlen(contents) > 0)
+                    cols->logo1 = count;
             }
+
+/******************************************************************************/
         } else if (strcmp(token, "LOGO2") == 0) {
-            cols->logo2 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strcpy(labels[i].logo2, contents);
+                if (strlen(contents) > 0)
+                    cols->logo2 = count;
             }
+
+/******************************************************************************/
         } else if (strcmp(token, "LOGO3") == 0) {
             cols->logo3 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
