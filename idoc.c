@@ -22,8 +22,14 @@
 /* length of GTIN-13                 */
 #define GTIN_13        13
 
-/* normal graphics folder path   */
-#define GRAPHICS_PATH  "C:\\users\\jkottiel\\Documents\\1 - Teleflex\\Labeling Resources\\Personal Graphics\\"
+/* normal graphics folder path                                           */
+#define GRAPHICS_PATH  "T:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
+
+/* alternate graphics folder path                                        */
+#define ALT_GRAPHICS_PATH  "C:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
+
+/* determine the graphics path at run time                               */
+bool alt_path = false;
 
 /* global variable that holds the spreadsheets specific column headings  */
 char **spreadsheet;
@@ -189,9 +195,16 @@ void print_spaces(FILE *fpout, int n) {
     @param graphic is the name of the graphic to append to the path and to print
 */
 void print_graphic_path(FILE *fpout, char *graphic) {
-    fprintf(fpout, "%s", GRAPHICS_PATH);
+    int n = 0;
+    if (alt_path) {
+        fprintf(fpout, "%s", ALT_GRAPHICS_PATH);
+        n = 255 - ((int) strlen(ALT_GRAPHICS_PATH) + (int) strlen(graphic));
+    } else {
+        fprintf(fpout, "%s", GRAPHICS_PATH);
+        n = 255 - ((int) strlen(GRAPHICS_PATH) + (int) strlen(graphic));
+    }
     fprintf(fpout, "%s", graphic);
-    int n = 255 - ((int) strlen(GRAPHICS_PATH) + (int) strlen(graphic));
+
     for (int i = 0; i < n; i++)
         fprintf(fpout, " ");
 }
@@ -1209,8 +1222,8 @@ int main(int argc, char *argv[]) {
 
     FILE *fp, *fpout;
 
-    if ((argc != 2) && (argc != 4)) {
-        printf("usage: ./idoc filename.txt -sn 7-digit-sn\n");
+    if ((argc != 2) && (argc != 3)) {
+        printf("usage: ./idoc filename.txt -J\n");
         return EXIT_FAILURE;
     }
 
@@ -1222,8 +1235,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
 
-    labels =
-            (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
+    labels = (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
 
     if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
         printf("Program quitting.\n");
@@ -1240,11 +1252,10 @@ int main(int argc, char *argv[]) {
     strcat(outputfile, "_IDoc.txt");
     printf("outputfile name is %s\n", outputfile);
 
-    // check for optional control_number from command line
-    //char ctrl_num[8] = "2541435";
+    // check for optional command line parameter '-J'
     if (argc > 2) {
-        if ((argv[2] != NULL) && (strcmp(argv[2], "-cn") == 0)) {
-            strcpy(idoc.ctrl_num, argv[3]);
+        if ((argv[2] != NULL) && (strcmp(argv[2], "-J") == 0)) {
+            alt_path = true;
         }
     }
 
