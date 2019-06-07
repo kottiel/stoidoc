@@ -43,7 +43,7 @@ int spreadsheet_row_number = 0;
 /* global variable to track the idoc sequence number                     */
 int sequence_number = 1;
 
-// Alphabetized SAP Characteristic Value Lookup
+// Case-INsensitive Alphabetized SAP Characteristic Value Lookup
 char lookup[][2][LRG] = {
         {"CE",          "CE Mark"},
         {"CE0120",      "CE_0120_Below"},
@@ -131,9 +131,9 @@ char *sap_lookup(char *needle) {
         else
             exit = true;
         haystack = lookup[middle][0];
-        if (strcmp(needle, haystack) == 0) {
+        if (strcasecmp(needle, haystack) == 0) {
             return lookup[middle][1];
-        } else if (strcmp(needle, haystack) < 0) {
+        } else if (strcasecmp(needle, haystack) < 0) {
             end = middle - 1;
         } else {
             start = middle + 1;
@@ -223,6 +223,14 @@ void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
     fprintf(fpout, "%06d", sequence_number++);
     fprintf(fpout, "%06d", char_seq_number);
     fprintf(fpout, CHAR_REC);
+}
+
+void print_info_column_header(FILE *fpout, char *col_name, char *col_value, Ctrl *idoc) {
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+    fprintf(fpout, "%-30s", col_name);
+    fprintf(fpout, "%-30s", col_value);
+    fprintf(fpout, "%-255s", col_value);
+    fprintf(fpout, "\n");
 }
 
 /**
@@ -362,7 +370,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
     // LABEL record (required). If the contents of .label are not "LBL", program aborts.
     {
-        char graphic_val[4] = {""};
+        char graphic_val[4] = {'\0'};
         strncpy(graphic_val, labels[record].label, 3);
         if (strcmp(graphic_val, "LBL") != 0)
             return 0;
@@ -442,11 +450,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TEMPLATENUMBER record (required)
     if (cols->templatenumber) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "TEMPLATENUMBER");
-        fprintf(fpout, "%-30s", labels[record].template);
-        fprintf(fpout, "%-255s", labels[record].template);
-        fprintf(fpout, "\n");
+        print_info_column_header(fpout, "TEMPLATE", labels[record].template, idoc);
     } else {
         printf("Missing template number in record %d. Aborting.\n", record);
         return 0;
@@ -457,11 +461,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         int match = 0;
         int rev = 0;
         if ((match = sscanf(labels[record].revision, "R%d", &rev) == 1) && rev >= 0 && rev <= 99) {
-            print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-            fprintf(fpout, "%-30s", "REVISION");
-            fprintf(fpout, "%-30s", labels[record].revision);
-            fprintf(fpout, "%-255s", labels[record].revision);
-            fprintf(fpout, "\n");
+            print_info_column_header(fpout, "REVISION", labels[record].revision, idoc);
         } else
             printf("Invalid revision value \"%s\" in record %d. REVISION record skipped.\n",
                    labels[record].revision, record);
@@ -488,37 +488,26 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             diff = (int) (a - token);
             memmove(token + diff, token + diff + 1, strlen(token) - 2);
         }
+        print_info_column_header(fpout, "SIZE", labels[record].size, idoc);
 
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "SIZE");
-        fprintf(fpout, "%-30s", labels[record].size);
-        fprintf(fpout, "%-255s", labels[record].size);
-        fprintf(fpout, "\n");
     }
 
-    // LEVEL record (optional)
+    /** LEVEL record (optional) */
     strncpy(graphic_val, labels[record].level, 1);
     if ((cols->level) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "LEVEL");
-        fprintf(fpout, "%-30s", labels[record].level);
-        fprintf(fpout, "%-255s", labels[record].level);
-        fprintf(fpout, "\n");
+        print_info_column_header(fpout, "LEVEL", labels[record].level, idoc);
+
     }
 
-    // QUANTITY record (optional)
+    /** QUANTITY record (optional) */
     strncpy(graphic_val, labels[record].quantity, 1);
     if ((cols->quantity) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "QUANTITY");
-        fprintf(fpout, "%-30s", labels[record].quantity);
-        fprintf(fpout, "%-255s", labels[record].quantity);
-        fprintf(fpout, "\n");
+        print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
-    // BARCODETEXT record (optional)
+    /** BARCODETEXT record (optional) */
     {
-        char graphic_val[2] = {""};
+        char graphic_val[2] = {'\0'};;
         strncpy(graphic_val, labels[record].gtin, 1);
         if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
             int match = 0;
@@ -527,11 +516,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 long long gtin = strtoll(labels[record].gtin, &endptr, 10);
                 if (((strlen(labels[record].gtin) == 14) && (gtin % 10 == checkDigit(&gtin))) ||
                     (strlen(labels[record].gtin) == 13)) {
-                    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-                    fprintf(fpout, "%-30s", "BARCODETEXT");
-                    fprintf(fpout, "%-30s", labels[record].gtin);
-                    fprintf(fpout, "%-255s", labels[record].gtin);
-                    fprintf(fpout, "\n");
+                    print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
                 } else
                     printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
                            labels[record].gtin, record);
@@ -542,11 +527,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
     // LTNUMBER record (optional)
     if ((cols->ltnumber) && (strlen(labels[record].ipn) > 0)) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout, "%-30s", "LTNUMBER");
-        fprintf(fpout, "%-30s", labels[record].ipn);
-        fprintf(fpout, "%-255s", labels[record].ipn);
-        fprintf(fpout, "\n");
+        print_info_column_header(fpout, "LTNUMBER", labels[record].ipn, idoc);
     }
 
     //
@@ -711,13 +692,11 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         fprintf(fpout, "\n");
     }
 
-/******************************************************************************/
-    // ECREP record (optional: N / value)
+    /** ECREP record (optional: N / value) */
     if (cols->ecrep)
         print_boolean_record(fpout, "ECREP", labels[record].ecrep, "EC Rep.tif", idoc);
-
-/******************************************************************************/
-    // EXPDATE record (optional)
+    
+    /** EXPDATE record (optional) */
     if (cols->expdate) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", "EXPDATE");
