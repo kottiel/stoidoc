@@ -22,11 +22,14 @@
 /* length of GTIN-13                 */
 #define GTIN_13        13
 
+/* the number of spaces to indent the TDline lines                       */
+#define TDLINE_INDENT  61
+
 /* normal graphics folder path                                           */
 #define GRAPHICS_PATH  "T:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
 
 /* alternate graphics folder path                                        */
-#define ALT_GRAPHICS_PATH  "C:\\MEDICAL\\NA\\RTP\\TEAM CENTER\\TEMPLATES\\GRAPHICS\\"
+#define ALT_GRAPHICS_PATH  "C:\\Users\\jkottiel\\Documents\\1 - Teleflex\\Labeling Resources\\Personal Graphics\\"
 
 /* determine the graphics path at run time                               */
 bool alt_path = false;
@@ -85,6 +88,7 @@ int isNumeric(char *str) {
 
     if (str == NULL || str[0] == '\0')
         return 0;
+
     int i = 0;
     while (str[i] != '\0')
         if (isdigit(str[i]) == 0)
@@ -416,21 +420,21 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             fprintf(fpout, TDLINE_REC);
             fprintf(fpout, "GRUNE  ENMATERIAL  ");
             fprintf(fpout, "%s", labels[record].label);
-            print_spaces(fpout, 61);
+            print_spaces(fpout, TDLINE_INDENT);
 
             //check for and remove any leading...
             if (token[0] == '\"')
-                memmove(token, token + 1, strlen(token));
+                memmove(token, token + 1, (int) strlen(token));
 
             // ...and/or trailing quotes
-            if (token[strlen(token) - 1] == '\"')
-                token[strlen(token) - 1] = '\0';
+            if (token[(int) strlen(token) - 1] == '\"')
+                token[(int) strlen(token) - 1] = '\0';
 
             // and convert instances of double quotes to single quotes
             char *a = strstr(token, "\"\"");
             if (a != NULL) {
-                memmove(a, a + 1, strlen(a));
-                token[strlen(token)] = '\0';
+                memmove(a, a + 1, (int) strlen(a));
+                token[(int) strlen(token)] = '\0';
             }
 
             char *dpos = strstr(token, "##");
@@ -442,9 +446,9 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 print_spaces(fpout, 70 - (int) (strlen(token) - 2));
 
                 // get the next segment of label record, after the "##"
-                token = dpos + strlen("##");
+                token = dpos + (int) strlen("##");
             } else {
-                fprintf(fpout, "%-70s", token);
+                fprintf(fpout, "%-74s", token);
                 token[0] = '\0';
             }
             if (tdline_count == 0)
