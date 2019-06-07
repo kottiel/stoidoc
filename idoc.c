@@ -43,7 +43,7 @@ int spreadsheet_row_number = 0;
 /* global variable to track the idoc sequence number                     */
 int sequence_number = 1;
 
-// Case-INsensitive Alphabetized SAP Characteristic Value Lookup
+/** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
         {"CE",          "CE Mark"},
         {"CE0120",      "CE_0120_Below"},
@@ -59,9 +59,10 @@ char lookup[][2][LRG] = {
         {"WECK_LOGO",   "Wecklogo"}
 };
 
+/** global variable to maintain size of the SAP lookup array             */
 int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
 
-// a struct of IDoc sequence numbers
+/** a global struct variable of IDoc sequence numbers                    */
 struct control_numbers {
     char ctrl_num[8];
     int matl_seq_number;
@@ -70,12 +71,15 @@ struct control_numbers {
     int char_seq_number;
 };
 
+/** defining the struct variable as a new type for convenience           */
 typedef struct control_numbers Ctrl;
 
 /**
     Returns true (non-zero) if character-string parameter represents
     a signed or unsigned floating-point number. Otherwise returns
     false (zero).
+    @param str is the numeric string value to evaluate
+    @return true if str is a number, false otherwise
  */
 int isNumeric(char *str) {
 
@@ -92,6 +96,8 @@ int isNumeric(char *str) {
 
 /**
     determine the check digit of a GTIN-13 format value
+    @param lp is the GTIN-13 value to calculate a check digit for
+    @return a check digit
  */
 int checkDigit(long long *lp) {
 
@@ -113,8 +119,10 @@ int checkDigit(long long *lp) {
 }
 
 /**
-    perform a binary search on the lookup array to find the SAP
+    perform a binary search in the lookup array to find the SAP
     characteristic definition given the characteristic value
+    @param needle is the search term
+    @return the corresponding SAP lookup value, or null if not found
 */
 char *sap_lookup(char *needle) {
 
@@ -123,7 +131,7 @@ char *sap_lookup(char *needle) {
     int middle = 0;
 
     bool exit = false;
-    char *haystack; // = lookup[0][0];
+    char *haystack;
 
     while (!exit) {
         if (middle != (end - start) / 2 + start)
@@ -695,7 +703,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     /** ECREP record (optional: N / value) */
     if (cols->ecrep)
         print_boolean_record(fpout, "ECREP", labels[record].ecrep, "EC Rep.tif", idoc);
-    
+
     /** EXPDATE record (optional) */
     if (cols->expdate) {
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
