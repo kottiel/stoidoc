@@ -436,7 +436,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->ltnumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].ipn, contents);
+                strncpy(labels[i].ipn, contents, sizeof(labels[0].ipn));
             }
         } else if (strcmp(token, "MANINBOX") == 0) {
             cols->maninbox = count;

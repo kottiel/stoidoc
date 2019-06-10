@@ -269,6 +269,8 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, C
             char graphic_name[MED];
             strcpy(graphic_name, gnp);
             print_graphic_path(fpout, strcat(graphic_name, ".tif"));
+        } else if ((strncasecmp(col_value, "N", 1) == 0) || strncasecmp(col_value, "NO", 2) == 0) {
+            print_graphic_path(fpout, "blank-01.tif");
         } else {
             print_graphic_path(fpout, strcat(cell_contents, ".tif"));
         }
@@ -985,28 +987,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 /******************************************************************************/
 
     // LOGO3 record (optional)
-    if ((cols->logo3) && (
-            strlen(labels[record]
-                           .logo3) > 0)) {
-        print_Z2BTLC01000(fpout, idoc
-                ->ctrl_num, idoc->char_seq_number);
-        fprintf(fpout,
-                "%-30s", "LOGO3");
-        fprintf(fpout,
-                "%-30s", labels[record].logo3);
-        // graphic_name will be converted to its SAP lookup value from
-        // the static lookup array
-        gnp = sap_lookup(labels[record].logo3);
-        if (gnp) {
-            strcpy(graphic_name, gnp);
-            print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else {
-            print_graphic_path(fpout, strcat(labels[record]
-                                                     .logo3, ".tif"));
-        }
-        fprintf(fpout,
-                "\n");
-    }
+    if (cols->logo3)
+        print_graphic_column_header(fpout, "LOGO3", labels[record].logo3, idoc);
 
     // LOGO4 record (optional)
     if ((cols->logo4) && (
