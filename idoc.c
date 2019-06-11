@@ -74,6 +74,52 @@ struct control_numbers {
 /** defining the struct variable as a new type for convenience           */
 typedef struct control_numbers Ctrl;
 
+/*
+
+Case-insensitive string compare (strncmp case-insensitive)
+- Identical to strncmp except case-insensitive. See: http://www.cplusplus.com/reference/cstring/strncmp/
+- Aided/inspired, in part, by: https://stackoverflow.com/a/5820991/4561887
+
+str1    C string 1 to be compared
+str2    C string 2 to be compared
+num     max number of chars to compare
+
+return:
+(essentially identical to strncmp)
+INT_MIN  invalid arguments (one or both of the input strings is a NULL pointer)
+<0       the first character that does not match has a lower value in str1 than in str2
+ 0       the contents of both strings are equal
+>0       the first character that does not match has a greater value in str1 than in str2
+
+*/
+static inline int strncmpci(const char *str1, const char *str2, size_t num) {
+    int ret_code = INT_MIN;
+
+    size_t chars_compared = 0;
+
+    // Check for NULL pointers
+    if (!str1 || !str2) {
+        goto done;
+    }
+
+    // Continue doing case-insensitive comparisons, one-character-at-a-time, of str1 to str2,
+    // as long as at least one of the strings still has more characters in it, and we have
+    // not yet compared num chars.
+    while ((*str1 || *str2) && (chars_compared < num)) {
+        ret_code = tolower((int) (*str1)) - tolower((int) (*str2));
+        if (ret_code != 0) {
+            // The 2 chars just compared don't match
+            break;
+        }
+        chars_compared++;
+        str1++;
+        str2++;
+    }
+
+    done:
+    return ret_code;
+}
+
 /**
     Returns true (non-zero) if character-string parameter represents
     a signed or unsigned floating-point number. Otherwise returns
@@ -140,9 +186,9 @@ char *sap_lookup(char *needle) {
         else
             exit = true;
         haystack = lookup[middle][0];
-        if (strcasecmp(needle, haystack) == 0) {
+        if (strncmpci(needle, haystack, strlen(needle)) == 0) {
             return lookup[middle][1];
-        } else if (strcasecmp(needle, haystack) < 0) {
+        } else if (strncmpci(needle, haystack, strlen(needle)) < 0) {
             end = middle - 1;
         } else {
             start = middle + 1;
@@ -209,10 +255,10 @@ void print_graphic_path(FILE *fpout, char *graphic) {
     int n = 0;
     if (alt_path) {
         fprintf(fpout, "%s", ALT_GRAPHICS_PATH);
-        n = 255 - ((int) strlen(ALT_GRAPHICS_PATH) + (int) strlen(graphic));
+        n = 255 - ((int) strlen(ALT_GRAPHICS_PATH) + (int) strnlen(graphic, MED + 1));
     } else {
         fprintf(fpout, "%s", GRAPHICS_PATH);
-        n = 255 - ((int) strlen(GRAPHICS_PATH) + (int) strlen(graphic));
+        n = 255 - ((int) strlen(GRAPHICS_PATH) + (int) strnlen(graphic, MED + 1));
     }
     fprintf(fpout, "%s", graphic);
 
@@ -258,18 +304,19 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, C
     print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
     fprintf(fpout, "%-30s", col_name);
 
-    if (strlen(cell_contents) > 0) {
+    if (strnlen(cell_contents, MED) > 0) {
 
         fprintf(fpout, "%-30s", col_value);
 
         // graphic_name will be converted to its SAP lookup value from
         // the static lookup array
         char *gnp = sap_lookup(col_value);
+
         if (gnp) {
             char graphic_name[MED];
-            strcpy(graphic_name, gnp);
+            strncpy(graphic_name, gnp, MED - 1);
             print_graphic_path(fpout, strcat(graphic_name, ".tif"));
-        } else if ((strncasecmp(col_value, "N", 1) == 0) || strncasecmp(col_value, "NO", 2) == 0) {
+        } else if ((strncmpci(col_value, "N", 1) == 0) || strncmpci(col_value, "NO", 2) == 0) {
             print_graphic_path(fpout, "blank-01.tif");
         } else {
             print_graphic_path(fpout, strcat(cell_contents, ".tif"));
@@ -412,7 +459,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
     }
     // LABEL record (required). If the contents of .label are not "LBL", program aborts.
-    char graphic_val_shrt[4] = {'\0'};
+    char graphic_val_shrt[4] = {0};
     strncpy(graphic_val_shrt, labels[record].label, 3);
     if (strcmp(graphic_val_shrt, "LBL") != 0)
             return 0;
@@ -512,7 +559,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     // SIZE record (optional)
     strncpy(graphic_val, labels[record].size, 1);
 
-    if ((cols->size) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+    if ((cols->size) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -536,31 +583,46 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     /** LEVEL record (optional) */
     strncpy(graphic_val, labels[record].level, 1);
-    if ((cols->level) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+    if ((cols->level) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
         print_info_column_header(fpout, "LEVEL", labels[record].level, idoc);
 
     }
 
     /** QUANTITY record (optional) */
     strncpy(graphic_val, labels[record].quantity, 1);
-    if ((cols->quantity) && (strlen(graphic_val) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
+    if ((cols->quantity) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
         print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
     /** BARCODETEXT record (optional) */
-
-    char gtin_digit[2] = {'\0'};
+    char gtin_digit[2] = {0};
     strncpy(gtin_digit, labels[record].gtin, 1);
-    if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strcasecmp(gtin_digit, "N") != 0)) {
+
+    char *gs1_prefix = labels[record].gtin;
+
+    if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
             char *endptr;
             if (isNumeric(labels[record].gtin)) {
+
+                // convert string to long long integer to verify GTIN length and check digit
                 long long gtin = strtoll(labels[record].gtin, &endptr, 10);
                 if (((strlen(labels[record].gtin) == GTIN_13 + 1) && (gtin % 10 == checkDigit(&gtin))) ||
                     (strlen(labels[record].gtin) == GTIN_13)) {
                     print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
                 } else
-                    printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
+                    printf("Invalid GTIN check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
                            labels[record].gtin, record);
+
+                // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704)
+                int gtin_prefix = gtin / 1000000;
+                if (gtin_prefix != 4026704 &&
+                    gtin_prefix != 14026704 &&
+                    gtin_prefix != 24026704 &&
+                    gtin_prefix != 34026704 &&
+                    gtin_prefix != 44026704)
+                    printf("Invalid GTIN prefix \"%d\" in record %d. BARCODETEXT record skipped.\n",
+                           gtin_prefix, record);
+
             } else
                 printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
@@ -862,7 +924,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         // graphic_name will be converted to its SAP lookup value from
         // the static lookup array
         if (graphic_name) {
-            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+            if ((strncmpci(graphic_name, "N", 1) == 0) || (strncmpci(graphic_name, "No", 2) == 0)) {
                 fprintf(fpout, "%-30s", "N");
                 print_graphic_path(fpout, "blank-01.tif");
             } else {
@@ -888,7 +950,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         // graphic_name will be converted to its SAP lookup value from
         // the static lookup array
         if (graphic_name) {
-            if ((strcmp(graphic_name, "N") == 0) || (strcmp(graphic_name, "No") == 0)) {
+            if ((strncmpci(graphic_name, "N", 1) == 0) || (strncmpci(graphic_name, "No", 2) == 0)) {
                 fprintf(fpout, "%-30s", "N");
                 print_graphic_path(fpout, "blank-01.tif");
             } else {
@@ -1162,7 +1224,7 @@ int main(int argc, char *argv[]) {
 
     // check for optional command line parameter '-J'
     if (argc > 2) {
-        if ((argv[2] != NULL) && (strcmp(argv[2], "-J") == 0)) {
+        if ((argv[2] != NULL) && (strncmpci(argv[2], "-J", 2) == 0)) {
             alt_path = true;
         }
     }
