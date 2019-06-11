@@ -282,8 +282,37 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, C
 }
 
 /**
-    print a passed column-field that contains a "Y" or a "N." If "Y," print the hard-coded
-    value associated with the graphic and a .tif suffix.
+    print a passed column-field that is in the special GRAPHICS01 - GRAPHICS14 category and is defined as
+    boolean in the Label_record. It contains a "Y" or a "N." If "Y," print the hard-coded value associated with
+    the graphic and a .tif suffix. Otherwise, print a "blank-01.tif" record.
+    @param fpout points to the output file
+    @param col_name is the column header
+    @param value is the boolean value of the column-field
+    @param graphic_name is the graphic to print if the boolean is true
+    @param idoc is the struct that tracks the control numbers
+ */
+void print_graphic0x_record(FILE *fpout, int *g_cnt, char *graphic_name, Ctrl *idoc) {
+
+    char g_cnt_str[03];
+    char graphic[] = "GRAPHIC0";
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+    sprintf(g_cnt_str, "%d", (*g_cnt)++);
+    fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+    fprintf(fpout, "%-30s", "Y");
+    print_graphic_path(fpout, graphic_name);
+    fprintf(fpout, "\n");
+}
+
+
+/**
+    print a passed column-field that is defined as boolean in the Label_record. It contains a "Y" or a "N."
+    If "Y," print the hard-coded value associated with the graphic and a .tif suffix. Otherwise, print a
+    "blank-01.tif" record.
+    @param fpout points to the output file
+    @param col_name is the column header
+    @param value is the boolean value of the column-field
+    @param graphic_name is the graphic to print if the boolean is true
+    @param idoc is the struct that tracks the control numbers
  */
 void print_boolean_record(FILE *fpout, char *col_name, bool value, char *graphic_name, Ctrl *idoc) {
 
@@ -543,7 +572,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     //
-    // GRAPHIC01 - GRAPHIC08 Fields (optional)
+    // GRAPHIC01 - GRAPHIC14 Fields (optional)
     //
 
     int g_cnt = 1;
@@ -551,158 +580,64 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     char graphic[] = "GRAPHIC0";
 
     // CAUTION record (optional)
-    if (cols->caution && labels[record].caution) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "Caution.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->caution && labels[record].caution)
+        print_graphic0x_record(fpout, &g_cnt, "Caution.tif", idoc);
 
     // ConsultIFU record (optional)
-    if (cols->consultifu && labels[record].consultifu) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "ConsultIFU.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->consultifu && labels[record].consultifu)
+        print_graphic0x_record(fpout, &g_cnt, "ConsultIFU.tif", idoc);
 
     // Containslatex record (optional)
-    if (cols->latex && labels[record].latex) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "Latex.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->latex && labels[record].latex)
+        print_graphic0x_record(fpout, &g_cnt, "Latex.tif", idoc);
 
     // DoNotUsePakDam record (optional)
-    if (cols->donotusedam && labels[record].donotusedamaged) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "DoNotUsePakDam.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->donotusedam && labels[record].donotusedamaged)
+        print_graphic0x_record(fpout, &g_cnt, "DoNotUsePakDam.tif", idoc);
 
     // Latex free record (optional)
-    if (cols->latexfree && labels[record].latexfree) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "Latex Free.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->latexfree && labels[record].latexfree)
+        print_graphic0x_record(fpout, &g_cnt, "Latex Free.tif", idoc);
 
     // Man in box record (optional)
-    if (cols->maninbox && labels[record].maninbox) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "ManInBox.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->maninbox && labels[record].maninbox)
+        print_graphic0x_record(fpout, &g_cnt, "ManInBox.tif", idoc);
 
     // DoNotRe-sterilize record (optional)
-    if (cols->noresterile && labels[record].noresterilize) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "DoNotRe-sterilize.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->noresterile && labels[record].noresterilize)
+        print_graphic0x_record(fpout, &g_cnt, "DoNotRe-sterilize.tif", idoc);
 
     // Non-sterile record (optional)
-    if (cols->nonsterile && labels[record].nonsterile) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "Non-sterile.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->nonsterile && labels[record].nonsterile)
+        print_graphic0x_record(fpout, &g_cnt, "Non-sterile.tif", idoc);
 
     // PVC Free record (optional)
-    if (cols->pvcfree && labels[record].pvcfree) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "PVC_Free.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->pvcfree && labels[record].pvcfree)
+        print_graphic0x_record(fpout, &g_cnt, "PVC_Free.tif", idoc);
 
     // RESUSABLE record (optional)
-    if (cols->reusable && labels[record].reusable) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "REUSABLE.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->reusable && labels[record].reusable)
+        print_graphic0x_record(fpout, &g_cnt, "REUSABLE.tif", idoc);
 
     // singleuse record (optional)
-    if (cols->singleuse && labels[record].singleuseonly) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "SINGLEUSE.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->singleuse && labels[record].singleuseonly)
+        print_graphic0x_record(fpout, &g_cnt, "SINGLEUSE.tif", idoc);
 
     // SINGLEPATIENTUSE record (optional)
-    if (cols->singlepatientuse && labels[record].singlepatientuse) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "SINGLEPATIENUSE.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->singlepatientuse && labels[record].singlepatientuse)
+        print_graphic0x_record(fpout, &g_cnt, "SINGLEPATIENUSE.tif", idoc);
 
     // electrosurgicalifu record (optional)
-    if (cols->electroifu && labels[record].electroifu) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt++);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "ElectroSurIFU.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->electroifu && labels[record].electroifu)
+        print_graphic0x_record(fpout, &g_cnt, "ElectroSurIFU.tif", idoc);
 
     // keepdry record (optional)
-    if (cols->keepdry && labels[record].keepdry) {
-        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-        sprintf(g_cnt_str, "%d", g_cnt);
-        strcpy(graphic, "GRAPHIC0");
-        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, "KeepDry.tif");
-        fprintf(fpout, "\n");
-    }
+    if (cols->keepdry && labels[record].keepdry)
+        print_graphic0x_record(fpout, &g_cnt, "KeepDry.tif", idoc);
+
+    //
+    // END of GRAPHIC01 - GRAPHIC14 Fields (optional)
+    //
 
     /** ECREP record (optional: N / value) */
     if (cols->ecrep)
