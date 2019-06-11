@@ -10,9 +10,6 @@
 
 #include "label.h"
 
-/* return character for Windows      */
-#define CR '\r'
-
 /* end of line new line character    */
 #define LF '\n'
 
@@ -84,7 +81,7 @@ typedef struct control_numbers Ctrl;
     @param str is the numeric string value to evaluate
     @return true if str is a number, false otherwise
  */
-int isNumeric(char *str) {
+int isNumeric(const char *str) {
 
     if (str == NULL || str[0] == '\0')
         return 0;
@@ -103,9 +100,9 @@ int isNumeric(char *str) {
     @param lp is the GTIN-13 value to calculate a check digit for
     @return a check digit
  */
-int checkDigit(long long *lp) {
+int checkDigit(const long long *llp) {
 
-    long long gtin = *lp;
+    long long gtin = *llp;
     gtin = gtin / 10;
     short digit;
     int sum = 0;
@@ -185,8 +182,10 @@ void read_spreadsheet(FILE *fp) {
 
         } else {
             buffer[i++] = c;
-            if ((c != '\t') && (c != '\r') && (c != '\n'))
-                line_not_empty = true;
+            if (c != '\t')
+                if (c != '\r')
+                    if (c != '\n')
+                        line_not_empty = true;
         }
     }
 }
@@ -224,6 +223,7 @@ void print_graphic_path(FILE *fpout, char *graphic) {
 /**
     prints a specified number of spaces to a file stream
     @param fpout points to the output file
+    @param ctrl_num
     @param n is the number of spaces to print
 */
 void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
@@ -381,10 +381,9 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
     }
     // LABEL record (required). If the contents of .label are not "LBL", program aborts.
-    {
-        char graphic_val[4] = {'\0'};
-        strncpy(graphic_val, labels[record].label, 3);
-        if (strcmp(graphic_val, "LBL") != 0)
+    char graphic_val_shrt[4] = {'\0'};
+    strncpy(graphic_val_shrt, labels[record].label, 3);
+    if (strcmp(graphic_val_shrt, "LBL") != 0)
             return 0;
         else {
             fprintf(fpout, "Z2BTLH01000");
@@ -401,7 +400,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             fprintf(fpout, "%-18s", labels[record].label);
             fprintf(fpout, "\n");
         }
-    }
+
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
 
     if (cols->tdline) {
@@ -470,9 +469,9 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // REVISION record (optional)
     if ((cols->revision) && (strlen(labels[record].revision) > 0)) {
-        int match = 0;
+
         int rev = 0;
-        if ((match = sscanf(labels[record].revision, "R%d", &rev) == 1) && rev >= 0 && rev <= 99) {
+        if ((sscanf(labels[record].revision, "R%d", &rev) == 1) && rev >= 0 && rev <= 99) {
             print_info_column_header(fpout, "REVISION", labels[record].revision, idoc);
         } else
             printf("Invalid revision value \"%s\" in record %d. REVISION record skipped.\n",
@@ -518,16 +517,15 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** BARCODETEXT record (optional) */
-    {
-        char graphic_val[2] = {'\0'};;
-        strncpy(graphic_val, labels[record].gtin, 1);
-        if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strcasecmp(graphic_val, "N") != 0)) {
-            int match = 0;
+
+    char gtin_digit[2] = {'\0'};
+    strncpy(gtin_digit, labels[record].gtin, 1);
+    if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strcasecmp(gtin_digit, "N") != 0)) {
             char *endptr;
             if (isNumeric(labels[record].gtin)) {
                 long long gtin = strtoll(labels[record].gtin, &endptr, 10);
-                if (((strlen(labels[record].gtin) == 14) && (gtin % 10 == checkDigit(&gtin))) ||
-                    (strlen(labels[record].gtin) == 13)) {
+                if (((strlen(labels[record].gtin) == GTIN_13 + 1) && (gtin % 10 == checkDigit(&gtin))) ||
+                    (strlen(labels[record].gtin) == GTIN_13)) {
                     print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
                 } else
                     printf("Invalid check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
@@ -536,7 +534,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
         }
-    }
+
     // LTNUMBER record (optional)
     if ((cols->ltnumber) && (strlen(labels[record].ipn) > 0)) {
         print_info_column_header(fpout, "LTNUMBER", labels[record].ipn, idoc);
@@ -827,8 +825,10 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 /******************************************************************************/
     // ADDRESS record (Optional: Y / N / value / blank)
     if (cols->address)
-        if (equals_yes(labels[record].address) || equals_no(labels[record].address))
-            print_boolean_record(fpout, "ADDRESS", labels[record].address, "TFX3LineAdd13i", idoc);
+        if (equals_yes(labels[record].address))
+            print_boolean_record(fpout, "ADDRESS", true, "TFX3LineAdd13i.tif", idoc);
+        else if (equals_no(labels[record].address))
+            print_boolean_record(fpout, "ADDRESS", false, "", idoc);
         else
             print_graphic_column_header(fpout, "ADDRESS", labels[record].address, idoc);
 
