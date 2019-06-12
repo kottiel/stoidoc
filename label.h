@@ -208,6 +208,8 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str);
 
 int peek_nth_token(int n, const char *buffer, char delimiter);
 
+int strncmpci(const char *str1, const char *str2, int num);
+
 int equals_yes(char *field);
 
 int equals_no(char *field);

@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
+#include <limits.h>
 
 /**
     This function initializes the dynamically allocated spreadsheet array.
@@ -105,12 +107,58 @@ int peek_nth_token(int n, const char *buffer, char delimiter) {
     return -1;
 }
 
+/*
+
+Case-insensitive string compare (strncmp case-insensitive)
+- Identical to strncmp except case-insensitive. See: http://www.cplusplus.com/reference/cstring/strncmp/
+- Aided/inspired, in part, by: https://stackoverflow.com/a/5820991/4561887
+
+str1    C string 1 to be compared
+str2    C string 2 to be compared
+num     max number of chars to compare
+
+return:
+(essentially identical to strncmp)
+INT_MIN  invalid arguments (one or both of the input strings is a NULL pointer)
+<0       the first character that does not match has a lower value in str1 than in str2
+ 0       the contents of both strings are equal
+>0       the first character that does not match has a greater value in str1 than in str2
+
+*/
+int strncmpci(const char *str1, const char *str2, int num) {
+    int ret_code = INT_MIN;
+
+    size_t chars_compared = 0;
+
+    // Check for NULL pointers
+    if (!str1 || !str2) {
+        goto done;
+    }
+
+    // Continue doing case-insensitive comparisons, one-character-at-a-time, of str1 to str2,
+    // as long as at least one of the strings still has more characters in it, and we have
+    // not yet compared num chars.
+    while ((*str1 || *str2) && (chars_compared < num)) {
+        ret_code = tolower((int) (*str1)) - tolower((int) (*str2));
+        if (ret_code != 0) {
+            // The 2 chars just compared don't match
+            break;
+        }
+        chars_compared++;
+        str1++;
+        str2++;
+    }
+
+    done:
+    return ret_code;
+}
+
 int equals_yes(char *field) {
-    return ((strcasecmp(field, "Y") == 0) || (strcasecmp(field, "Yes") == 0));
+    return ((strncmpci(field, "Y", 1) == 0) || (strncmpci(field, "Yes", 3) == 0));
 }
 
 int equals_no(char *field) {
-    return ((strcasecmp(field, "N") == 0) || (strcasecmp(field, "No") == 0));
+    return ((strncmpci(field, "N", 1) == 0) || (strncmpci(field, "NO", 2) == 0));
 }
 
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str) {
