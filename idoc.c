@@ -274,7 +274,6 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
         if (equals_yes(col_value)) {
             print_graphic_path(fpout, strcat(default_yes, ".tif"));
         } else if (equals_no(col_value)) {
-            fprintf(fpout, "%-30s", "N");
             print_graphic_path(fpout, "blank-01.tif");
         } else {
             // graphic_name will be converted to its SAP lookup value from the static lookup array
@@ -503,7 +502,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TEMPLATENUMBER record (required)
     if (cols->templatenumber) {
-        print_info_column_header(fpout, "TEMPLATE", labels[record].template, idoc);
+        print_info_column_header(fpout, "TEMPLATENUMBER", labels[record].template, idoc);
     } else {
         printf("Missing template number in record %d. Aborting.\n", record);
         return 0;
