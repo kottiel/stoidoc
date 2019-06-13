@@ -12,7 +12,6 @@
 
 /* the spreadsheet's initial capacity */
 #define INITIAL_CAP             3
-#define SPREADSHEET_INIT_SIZE   3
 #define MAX_COLUMNS          1000
 #define MED                    30
 #define LRG                    41
@@ -29,7 +28,6 @@ extern int spreadsheet_cap;
 extern int spreadsheet_row_number;
 
 
-typedef char *multi_tok_t;
 /**
 
 */
@@ -217,8 +215,6 @@ int equals_no(char *field);
 int spreadsheet_init();
 
 int spreadsheet_expand();
-
-char *multi_tok(char *input, char *delimiter);
 
 void sort_labels(Label_record *labels);
 

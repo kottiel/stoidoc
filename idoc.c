@@ -144,9 +144,9 @@ char *sap_lookup(char *needle) {
         else
             exit = true;
         haystack = lookup[middle][0];
-        if (strncmpci(needle, haystack, strlen(needle)) == 0) {
+        if (strncmpci(needle, haystack, (int) strlen(needle)) == 0) {
             return lookup[middle][1];
-        } else if (strncmpci(needle, haystack, strlen(needle)) < 0) {
+        } else if (strncmpci(needle, haystack, (int) strlen(needle)) < 0) {
             end = middle - 1;
         } else {
             start = middle + 1;
@@ -306,7 +306,7 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
 void print_graphic0x_record(FILE *fpout, int *g_cnt, char *graphic_name, Ctrl *idoc) {
 
     char g_cnt_str[03];
-    char graphic[] = "GRAPHIC0";
+    char graphic[10] = "GRAPHIC0";
     print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
     sprintf(g_cnt_str, "%d", (*g_cnt)++);
     fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
@@ -388,14 +388,11 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // Print the records for a given IDOC (labels[record])
 
-    // the name of the graphic to be appended to the graphic path
-    char graphic_name[MED];
-
     // temporary variables to examine field contents
     char graphic_val[MED];
-    char *gnp;
 
-    char prev_material[MED];
+
+    char prev_material[MED] = {0};
 
     // MATERIAL record (optional)
     // (this is skipped if the previous material record is the same)
@@ -524,7 +521,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     // SIZE record (optional)
-    strncpy(graphic_val, labels[record].size, 1);
+    memcpy(graphic_val, labels[record].size, MED);
 
     if ((cols->size) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
         char *token = labels[record].size;
@@ -565,8 +562,6 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     char gtin_digit[2] = {0};
     strncpy(gtin_digit, labels[record].gtin, 1);
 
-    char *gs1_prefix = labels[record].gtin;
-
     if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
         char *endptr;
         if (isNumeric(labels[record].gtin)) {
@@ -581,7 +576,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                        labels[record].gtin, record);
 
             // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704)
-            int gtin_prefix = gtin / 1000000;
+            int gtin_prefix = (int) (gtin / 1000000);
             if (gtin_prefix != 4026704 &&
                 gtin_prefix != 14026704 &&
                 gtin_prefix != 24026704 &&
@@ -605,8 +600,6 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     //
 
     int g_cnt = 1;
-    char g_cnt_str[03];
-    char graphic[] = "GRAPHIC0";
 
     // CAUTION record (optional)
     if (cols->caution && labels[record].caution)
@@ -880,7 +873,7 @@ int main(int argc, char *argv[]) {
 
     // the labels array must be sorted by label number
 
-    //sort_labels(labels);
+    sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
@@ -902,25 +895,27 @@ int main(int argc, char *argv[]) {
     if (print_control_record(fpout, &idoc) != 0)
         return EXIT_FAILURE;
 
-    int i = 1;
-    while (i < spreadsheet_row_number) {
-        if ((print_label_idoc_records(fpout, labels, &columns, i, &idoc)))
-            i++;
-        else {
-            printf("Content error in text-delimited spreadsheet, line %d. Aborting.\n", i);
-            return EXIT_FAILURE;
+    {
+        int i = 1;
+        while (i < spreadsheet_row_number) {
+            if ((print_label_idoc_records(fpout, labels, &columns, i, &idoc)))
+                i++;
+            else {
+                printf("Content error in text-delimited spreadsheet, line %d. Aborting.\n", i);
+                return EXIT_FAILURE;
+            }
         }
     }
 
     fclose(fpout);
     free(outputfile);
 
-/*     for (int i = 0; i < spreadsheet_row_number; i++)
-        free(spreadsheet[i]); */
+    for (int i = 0; i < spreadsheet_row_number; i++)
+        free(spreadsheet[i]);
     free(spreadsheet);
 
-    /* for (int i = 1; i < spreadsheet_row_number; i++)
-        free(labels[i].tdline); */
+    for (int i = 1; i < spreadsheet_row_number; i++)
+        free(labels[i].tdline);
 
     free(labels);
 

@@ -34,7 +34,7 @@ int spreadsheet_expand() {
 
 char *get_token(char *buffer, char tab_str) {
     char *delimiter;
-    int buffer_len = strlen(buffer);
+    int buffer_len = (int) strlen(buffer);
     char *token = (char *) malloc(MAX_COLUMNS * sizeof(char));
 
     if ((delimiter = strchr(buffer, tab_str)) != NULL) {
@@ -44,7 +44,7 @@ char *get_token(char *buffer, char tab_str) {
             token[c++] = *i;
         }
         token[c] = '\0';
-        int delimiter_len = delimiter - buffer;
+        int delimiter_len = (int) (delimiter - buffer);
         memmove(buffer, delimiter, (size_t) (buffer_len - delimiter_len + 1));
         // buffer_len = strlen(buffer);
     } else if (buffer_len > 0) { // get last token
@@ -62,28 +62,6 @@ char *get_token(char *buffer, char tab_str) {
     return token;
 }
 
-char *multi_tok(char *input, char *delimiter) {
-    static char *string;
-    if (input != NULL)
-        string = input;
-
-    if (string == NULL)
-        return string;
-
-    char *end = strstr(string, delimiter);
-    if (end == NULL) {
-        char *temp = string;
-        string = NULL;
-        return temp;
-    }
-
-    char *temp = string;
-
-    *end = '\0';
-    string = end + strlen(delimiter);
-    return temp;
-}
-
 /**
     returns the position of the nth occurrence of a delimiter in a char array
 */
@@ -94,7 +72,7 @@ int peek_nth_token(int n, const char *buffer, char delimiter) {
 
     int i = 0;
     int hit_count = 0;
-    int length = strlen(buffer);
+    int length = (int) strlen(buffer);
 
     while ((i < length) && (hit_count < n)) {
         if (buffer[i] == delimiter)
@@ -169,12 +147,12 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
     if (count == 0)
         start = 0;
     else if ((start = peek_nth_token(count, spreadsheet[i], tab_str)) == -1)
-        start = strlen(spreadsheet[i]);
+        start = (int) strlen(spreadsheet[i]);
     else
         start++;
 
     if ((stop = peek_nth_token(count + 1, spreadsheet[i], tab_str)) == -1)
-        stop = strlen(spreadsheet[i]);
+        stop = (int) strlen(spreadsheet[i]);
 
     int length = stop - start;
     strncpy(contents, spreadsheet[i] + start, (size_t) length);
@@ -184,7 +162,7 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
 }
 
 int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
-    int count = 0;
+    unsigned short count = 0;
 
     char tab_str = TAB;
     char contents[MAX_COLUMNS];
