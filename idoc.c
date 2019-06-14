@@ -16,6 +16,8 @@
 /* end of line new line character    */
 #define CR '\r'
 
+/* if the -F command line parameter is present, F_ is activated */
+#define F_ "F_"
 /* length of '_idoc->txt' extension  */
 #define FILE_EXT_LEN   10
 
@@ -618,7 +620,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // Latex free record (optional)
     if (cols->latexfree && labels[record].latexfree)
-        print_graphic0x_record(fpout, &g_cnt, "Latex Free.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "Latex Free.tif", idoc);
 
     // Man in box record (optional)
     if (cols->maninbox && labels[record].maninbox)
@@ -670,7 +672,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // KEEPAWAYHEAT record (optional)
     if (cols->keepawayheat)
-        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, "KeepAwayHeat.tif", idoc);
+        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, "F_KeepAwayHeat.tif", idoc);
 
     // LOTGRAPHIC record (optional)
     if (cols->lotgraphic)
@@ -826,7 +828,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // INSERTGRAPHIC record (optional)
     if (cols->insertgraphic)
-        print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "default", idoc);
+        print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "LMAFASTRACH.tif", idoc);
 
     return 1;
 }
