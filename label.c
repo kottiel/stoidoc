@@ -132,11 +132,11 @@ int strncmpci(const char *str1, const char *str2, int num) {
 }
 
 int equals_yes(char *field) {
-    return ((strncmpci(field, "Y", 1) == 0) || (strncmpci(field, "Yes", 3) == 0));
+    return ((strcasecmp(field, "Y") == 0) || (strcasecmp(field, "Yes") == 0));
 }
 
 int equals_no(char *field) {
-    return ((strncmpci(field, "N", 1) == 0) || (strncmpci(field, "NO", 2) == 0));
+    return ((strcasecmp(field, "N") == 0) || (strcasecmp(field, "NO") == 0));
 }
 
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str) {
