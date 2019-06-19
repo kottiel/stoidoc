@@ -1,5 +1,7 @@
 /**
- *  idoc.c
+ *  idoc.c contains the main and supporting functions to read a text-delimited
+ *  file that contains label column headers and row label data and generate an
+ *  idoc file.
  */
 #include <ctype.h>
 #include <stdbool.h>
@@ -18,6 +20,7 @@
 
 /* if the -F command line parameter is present, F_ is activated */
 #define F_ "F_"
+
 /* length of '_idoc->txt' extension  */
 #define FILE_EXT_LEN   10
 
@@ -604,19 +607,19 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // CAUTION record (optional)
     if (cols->caution && labels[record].caution)
-        print_graphic0x_record(fpout, &g_cnt, "Caution.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "Caution.tif", idoc);
 
     // ConsultIFU record (optional)
     if (cols->consultifu && labels[record].consultifu)
-        print_graphic0x_record(fpout, &g_cnt, "ConsultIFU.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "ConsultIFU.tif", idoc);
 
     // Containslatex record (optional)
     if (cols->latex && labels[record].latex)
-        print_graphic0x_record(fpout, &g_cnt, "Latex.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "Latex.tif", idoc);
 
     // DoNotUsePakDam record (optional)
     if (cols->donotusedam && labels[record].donotusedamaged)
-        print_graphic0x_record(fpout, &g_cnt, "DoNotUsePakDam.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "DoNotUsePakDam.tif", idoc);
 
     // Latex free record (optional)
     if (cols->latexfree && labels[record].latexfree)
@@ -624,39 +627,39 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // Man in box record (optional)
     if (cols->maninbox && labels[record].maninbox)
-        print_graphic0x_record(fpout, &g_cnt, "ManInBox.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "ManInBox.tif", idoc);
 
     // DoNotRe-sterilize record (optional)
     if (cols->noresterile && labels[record].noresterilize)
-        print_graphic0x_record(fpout, &g_cnt, "DoNotRe-sterilize.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "DoNotRe-sterilize.tif", idoc);
 
     // Non-sterile record (optional)
     if (cols->nonsterile && labels[record].nonsterile)
-        print_graphic0x_record(fpout, &g_cnt, "Non-sterile.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "Non-sterile.tif", idoc);
 
     // PVC Free record (optional)
     if (cols->pvcfree && labels[record].pvcfree)
-        print_graphic0x_record(fpout, &g_cnt, "PVC_Free.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "PVC_Free.tif", idoc);
 
     // RESUSABLE record (optional)
     if (cols->reusable && labels[record].reusable)
-        print_graphic0x_record(fpout, &g_cnt, "REUSABLE.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "REUSABLE.tif", idoc);
 
     // singleuse record (optional)
     if (cols->singleuse && labels[record].singleuseonly)
-        print_graphic0x_record(fpout, &g_cnt, "SINGLEUSE.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "SINGLEUSE.tif", idoc);
 
     // SINGLEPATIENTUSE record (optional)
     if (cols->singlepatientuse && labels[record].singlepatientuse)
-        print_graphic0x_record(fpout, &g_cnt, "SINGLEPATIENUSE.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "SINGLEPATIENUSE.tif", idoc);
 
     // electrosurgicalifu record (optional)
     if (cols->electroifu && labels[record].electroifu)
-        print_graphic0x_record(fpout, &g_cnt, "ElectroSurIFU.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "ElectroSurIFU.tif", idoc);
 
     // keepdry record (optional)
     if (cols->keepdry && labels[record].keepdry)
-        print_graphic0x_record(fpout, &g_cnt, "KeepDry.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "KeepDry.tif", idoc);
 
     //
     // END of GRAPHIC01 - GRAPHIC14 Fields (optional)
@@ -664,27 +667,27 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     /** ECREP record (optional: N / value) */
     if (cols->ecrep)
-        print_boolean_record(fpout, "ECREP", labels[record].ecrep, "EC Rep.tif", idoc);
+        print_boolean_record(fpout, "ECREP", labels[record].ecrep, F_ "EC Rep.tif", idoc);
 
     /** EXPDATE record (optional) */
     if (cols->expdate)
-        print_boolean_record(fpout, "EXPDATE", labels[record].expdate, "Expiration Date.tif", idoc);
+        print_boolean_record(fpout, "EXPDATE", labels[record].expdate, F_ "Expiration Date.tif", idoc);
 
     // KEEPAWAYHEAT record (optional)
     if (cols->keepawayheat)
-        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, "F_KeepAwayHeat.tif", idoc);
+        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, F_ "KeepAwayHeat.tif", idoc);
 
     // LOTGRAPHIC record (optional)
     if (cols->lotgraphic)
-        print_boolean_record(fpout, "LOTGRAPHIC", labels[record].lotgraphic, "Lot.tif", idoc);
+        print_boolean_record(fpout, "LOTGRAPHIC", labels[record].lotgraphic, F_ "Lot.tif", idoc);
 
     // MANUFACTURER record (optional)
     if (cols->manufacturer)
-        print_boolean_record(fpout, "MANUFACTURER", labels[record].manufacturer, "Manufacturer.tif", idoc);
+        print_boolean_record(fpout, "MANUFACTURER", labels[record].manufacturer, F_ "Manufacturer.tif", idoc);
 
     // MFGDATE record (optional)
     if (cols->mfgdate)
-        print_boolean_record(fpout, "MFGDATE", labels[record].mfgdate, "DateofManufacture.tif", idoc);
+        print_boolean_record(fpout, "MFGDATE", labels[record].mfgdate, F_ "DateofManufacture.tif", idoc);
 
     // PHTDEHP record (optional)
     if (cols->phtdehp)
@@ -692,27 +695,27 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // PHTBBP record (optional)
     if (cols->phtbbp)
-        print_boolean_record(fpout, "PHTBBP", labels[record].phtbbp, "PHT-BBP.tif", idoc);
+        print_boolean_record(fpout, "PHTBBP", labels[record].phtbbp, F_ "PHT-BBP.tif", idoc);
 
     // PHTDINP record (optional)
     if (cols->phtdinp)
-        print_boolean_record(fpout, "PHTDINP", labels[record].phtdinp, "PHT-DINP.tif", idoc);
+        print_boolean_record(fpout, "PHTDINP", labels[record].phtdinp, F_ "PHT-DINP.tif", idoc);
 
     // REFNUMBER record (optional)
     if (cols->refnumber)
-        print_boolean_record(fpout, "REFNUMBER", labels[record].refnumber, "REF.tif", idoc);
+        print_boolean_record(fpout, "REFNUMBER", labels[record].refnumber, F_ "REF.tif", idoc);
 
     // REF record (optional)
     if (cols->ref && labels[record].ref)
-        print_boolean_record(fpout, "REF", labels[record].ref, "REF.tif", idoc);
+        print_boolean_record(fpout, "REF", labels[record].ref, F_ "REF.tif", idoc);
 
     // RXONLY record (optional)
     if (cols->rxonly)
-        print_boolean_record(fpout, "RXONLY", labels[record].rxonly, "RX Only.tif", idoc);
+        print_boolean_record(fpout, "RXONLY", labels[record].rxonly, F_ "RX Only.tif", idoc);
 
     // SERIAL record (optional)
     if (cols->serial)
-        print_boolean_record(fpout, "SERIAL", labels[record].serial, "Serial Number.tif", idoc);
+        print_boolean_record(fpout, "SERIAL", labels[record].serial, F_ "Serial Number.tif", idoc);
 
     // SIZELOGO record (optional)
     /*if (cols->sizelogo) {
@@ -720,7 +723,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TFXLOGO record (Optional: Y / N / blank)
     if (cols->tfxlogo)
-        print_boolean_record(fpout, "TFXLOGO", labels[record].tfxlogo, "TeleflexMedical.tif", idoc);
+        print_boolean_record(fpout, "TFXLOGO", labels[record].tfxlogo, F_ "TeleflexMedical.tif", idoc);
 
     // ADDRESS record (Optional: Y / N / value / blank)
     if (cols->address)
