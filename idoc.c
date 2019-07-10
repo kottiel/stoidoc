@@ -20,7 +20,8 @@
 #define CR '\r'
 
 /* if the -F command line parameter is present, F_ is activated */
-#define F_ "F_"
+//#define F_ "F_"
+#define F_ ""
 
 /* length of '_idoc->txt' extension  */
 #define FILE_EXT_LEN   10
@@ -582,15 +583,14 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 printf("Invalid GTIN check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
 
-            // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704)
-            int gtin_prefix = (int) (gtin / 1000000);
-            if (gtin_prefix != 4026704 &&
-                gtin_prefix != 14026704 &&
-                gtin_prefix != 24026704 &&
-                gtin_prefix != 34026704 &&
-                gtin_prefix != 44026704)
+            // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
+            int gtin_ctry_prefix = (int) (gtin / 10000000000000);
+            int gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * 10000000000000)) / 1000000);
+            if ((gtin_ctry_prefix > 4) ||
+                (gtin_cpny_prefix != 4026704 &&
+                 gtin_cpny_prefix != 5060112))
                 printf("Invalid GTIN prefix \"%d\" in record %d. BARCODETEXT record skipped.\n",
-                       gtin_prefix, record);
+                       gtin_cpny_prefix, record);
 
         } else
             printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
