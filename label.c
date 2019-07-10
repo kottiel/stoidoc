@@ -2,6 +2,7 @@
  *  label.c
  */
 #include "label.h"
+#include "strl.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -176,13 +177,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->label = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].label, contents);
+                strlcpy(labels[i].label, contents, sizeof(labels[i].label));
             }
         } else if (strcmp(token, "MATERIAL") == 0) {
             cols->material = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].material, contents);
+                strlcpy(labels[i].material, contents, sizeof(labels[i].material));
             }
         } else if (strcmp(token, "TDLINE") == 0) {
             cols->tdline = count;
@@ -190,23 +191,21 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 get_field_contents_from_row(contents, i, count, tab_str);
 
                 labels[i].tdline = (char *) malloc(strlen(contents) + 1);
-                strcpy(labels[i].tdline, contents);
+                strlcpy(labels[i].tdline, contents, sizeof(contents));
             }
 
-/******************************************************************************/
         } else if (strcmp(token, "ADDRESS") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].address, contents);
+                strlcpy(labels[i].address, contents, sizeof(labels[i].address));
                 if (strlen(contents))
                     cols->address = count;
             }
-/******************************************************************************/
 
         } else if (strcmp(token, "BARCODETEXT") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].gtin, contents);
+                strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
                 if (strlen(contents))
                     cols->barcodetext = count;
             }
@@ -214,7 +213,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "BOMLEVEL") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].bomlevel, contents);
+                strlcpy(labels[i].bomlevel, contents, sizeof(labels[i].bomlevel));
                 if (strlen(contents))
                     cols->bomlevel = count;
             }
@@ -234,7 +233,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "CAUTIONSTATE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].cautionstatement, contents);
+                strlcpy(labels[i].cautionstatement, contents, sizeof(labels[i].cautionstatement));
                 if (strlen(contents))
                     cols->cautionstate = count;
             }
@@ -242,7 +241,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "CE0120") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].cemark, contents);
+                strlcpy(labels[i].cemark, contents, sizeof(labels[i].cemark));
                 if (strlen(contents))
                     cols->ce0120 = true;
 
@@ -269,14 +268,14 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->coostate = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].coostate, contents);
+                strlcpy(labels[i].coostate, contents, sizeof(labels[i].coostate));
             }
         } else if (strcmp(token, "DISTRIBUTEDBY") == 0) {
             cols->distby = count;
 
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].distby, contents);
+                strlcpy(labels[i].distby, contents, sizeof(labels[i].distby));
             }
         } else if ((strcmp(token, "DONOTUSEDAM") == 0) ||
                    (strcmp(token, "DONOTPAKDAM") == 0)) {
@@ -306,7 +305,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->ecrepaddress = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].ecrepaddress, contents);
+                strlcpy(labels[i].ecrepaddress, contents, sizeof(labels[i].ecrepaddress));
             }
         } else if (strcmp(token, "ELECTROSURIFU") == 0) {
             cols->electroifu = count;
@@ -334,7 +333,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->flgraphic = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].flgraphic, contents);
+                strlcpy(labels[i].flgraphic, contents, sizeof(labels[i].flgraphic));
             }
 /******************************************************************************/
         } else if (strcmp(token, "KEEPAWAYHEAT") == 0) {
@@ -353,7 +352,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->insertgraphic = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].insertgraphic, contents);
+                strlcpy(labels[i].insertgraphic, contents, sizeof(labels[i].insertgraphic));
             }
         } else if (strcmp(token, "KEEPDRY") == 0) {
             cols->keepdry = count;
@@ -368,13 +367,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->labelgraph1 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].labelgraph1, contents);
+                strlcpy(labels[i].labelgraph1, contents, sizeof(labels[i].labelgraph1));
             }
         } else if (strcmp(token, "LABELGRAPH2") == 0) {
             cols->labelgraph2 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].labelgraph2, contents);
+                strlcpy(labels[i].labelgraph2, contents, sizeof(labels[i].labelgraph2));
             }
         } else if (strcmp(token, "LATEXFREE") == 0) {
             cols->latexfree = count;
@@ -389,25 +388,25 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->latexstate = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].latexstatement, contents);
+                strlcpy(labels[i].latexstatement, contents, sizeof(labels[i].latexstatement));
             }
         } else if (strcmp(token, "LEVEL") == 0) {
             cols->level = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].level, contents);
+                strlcpy(labels[i].level, contents, sizeof(labels[i].level));
             }
         } else if (strcmp(token, "LOGO1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].logo1, contents);
+                strlcpy(labels[i].logo1, contents, sizeof(labels[i].logo1));
                 if (strlen(contents) > 0)
                     cols->logo1 = count;
             }
         } else if (strcmp(token, "LOGO2") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].logo2, contents);
+                strlcpy(labels[i].logo2, contents, sizeof(labels[i].logo2));
                 if (strlen(contents) > 0)
                     cols->logo2 = count;
             }
@@ -415,52 +414,52 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->logo3 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].logo3, contents);
+                strlcpy(labels[i].logo3, contents, sizeof(labels[i].logo3));
             }
         } else if (strcmp(token, "LOGO4") == 0) {
             cols->logo4 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].logo4, contents);
+                strlcpy(labels[i].logo4, contents, sizeof(labels[i].logo4));
             }
         } else if (strcmp(token, "LOGO5") == 0) {
             cols->logo5 = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].logo5, contents);
+                strlcpy(labels[i].logo5, contents, sizeof(labels[i].logo5));
             }
         } else if (strcmp(token, "MDR1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strcpy(labels[i].mdr1, contents);
+                    strlcpy(labels[i].mdr1, contents, sizeof(labels[i].mdr1));
                     cols->mdr1 = count;
                 }
             }
         } else if (strcmp(token, "MDR2") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strcpy(labels[i].mdr2, contents);
+                    strlcpy(labels[i].mdr2, contents, sizeof(labels[i].mdr2));
                     cols->mdr2 = count;
                 }
             }
         } else if (strcmp(token, "MDR3") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strcpy(labels[i].mdr3, contents);
+                    strlcpy(labels[i].mdr3, contents, sizeof(labels[i].mdr3));
                     cols->mdr3 = count;
                 }
             }
         } else if (strcmp(token, "MDR4") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strcpy(labels[i].mdr4, contents);
+                    strlcpy(labels[i].mdr4, contents, sizeof(labels[i].mdr4));
                     cols->mdr4 = count;
                 }
             }
         } else if (strcmp(token, "MDR5") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strcpy(labels[i].mdr5, contents);
+                    strlcpy(labels[i].mdr5, contents, sizeof(labels[i].mdr5));
                     cols->mdr5 = count;
                 }
             }
@@ -491,7 +490,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "MANUFACTUREDBY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].manufacturedby, contents);
+                strlcpy(labels[i].manufacturedby, contents, sizeof(labels[i].manufacturedby));
                 if (strlen(contents))
                     cols->manufacturedby = count;
             }
@@ -537,7 +536,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->patentstatement = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].patentstatement, contents);
+                strlcpy(labels[i].patentstatement, contents, sizeof(labels[i].patentstatement));
             }
         } else if (strcmp(token, "PHTDEHP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -581,7 +580,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->quantity = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].quantity, contents);
+                strlcpy(labels[i].quantity, contents, sizeof(labels[i].quantity));
             }
         } else if (strcmp(token, "REF") == 0) {
             cols->ref = count;
@@ -616,7 +615,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->revision = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].revision, contents);
+                strlcpy(labels[i].revision, contents, sizeof(labels[i].revision));
             }
         } else if (strcmp(token, "RXONLY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -662,7 +661,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->size = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].size, contents);
+                strlcpy(labels[i].size, contents, sizeof(labels[i].size));
             }
 /*        } else if (strcmp(token, "SIZELOGO") == 0) {
             cols->sizelogo = count;
@@ -676,7 +675,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "STERILITYTYPE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].sterilitytype, contents);
+                strlcpy(labels[i].sterilitytype, contents, sizeof(labels[i].sterilitytype));
                 if (strlen(contents))
                     cols->sterilitytype = count;
             }
@@ -684,13 +683,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->sterilitystatement = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].sterilitystatement, contents);
+                strlcpy(labels[i].sterilitystatement, contents, sizeof(labels[i].sterilitystatement));
             }
         } else if (strcmp(token, "TEMPLATENUMBER") == 0) {
             cols->templatenumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].template, contents);
+                strlcpy(labels[i].template, contents, sizeof(labels[i].template));
             }
         } else if (strcmp(token, "TFXLOGO") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -705,7 +704,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             cols->version = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strcpy(labels[i].version, contents);
+                strlcpy(labels[i].version, contents, sizeof(labels[i].version));
             }
         } else {
             if (strlen(token) > 0)

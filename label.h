@@ -12,9 +12,21 @@
 
 /* the spreadsheet's initial capacity */
 #define INITIAL_CAP             3
+
 #define MAX_COLUMNS          1000
-#define MED                    30
+
+/* Field lengths                     */
 #define LRG                    41
+#define MED                    30
+#define MAX_TEMPLATE_LEN       18
+#define MAX_LEVEL              11
+#define MAX_LABEL_LEN          10
+#define MAX_IPN_LEN            10
+#define MAX_GTIN_LEN           15
+#define SML                     5
+#define MAX_REV_LEN             4
+
+/* IDoc Field types                  */
 #define MATERIAL_REC          "02"
 #define LABEL_REC             "03"
 #define TDLINE_REC            "04"
@@ -26,7 +38,6 @@
 extern char **spreadsheet;
 extern int spreadsheet_cap;
 extern int spreadsheet_row_number;
-
 
 /**
 
@@ -63,14 +74,14 @@ typedef struct {
     char sterilitytype[MED];
     char temperaturerange[MED];
     char version[MED];
-    char gtin[15];
-    char level[11];
-    char label[10];
-    char ipn[10];
+    char gtin[MAX_GTIN_LEN];
+    char level[MAX_LEVEL];
+    char label[MAX_LABEL_LEN];
+    char ipn[MAX_IPN_LEN];
     char quantity[LRG];
-    char template[8];
-    char bomlevel[5];
-    char revision[4];
+    char template[MAX_TEMPLATE_LEN];
+    char bomlevel[SML];
+    char revision[MAX_REV_LEN];
     char *tdline;
 
     bool caution;

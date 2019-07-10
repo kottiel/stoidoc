@@ -11,6 +11,7 @@
 #include <time.h>
 
 #include "label.h"
+#include "strl.h"
 
 /* end of line new line character    */
 #define LF '\n'
@@ -149,9 +150,9 @@ char *sap_lookup(char *needle) {
         else
             exit = true;
         haystack = lookup[middle][0];
-        if (strncmpci(needle, haystack, (int) strlen(needle)) == 0) {
+        if (strcasecmp(needle, haystack) == 0) {
             return lookup[middle][1];
-        } else if (strncmpci(needle, haystack, (int) strlen(needle)) < 0) {
+        } else if (strcasecmp(needle, haystack) < 0) {
             end = middle - 1;
         } else {
             start = middle + 1;
@@ -183,7 +184,7 @@ void read_spreadsheet(FILE *fp) {
                 }
                 spreadsheet[spreadsheet_row_number] =
                         (char *) malloc(i * sizeof(char) + 2);
-                strcpy(spreadsheet[spreadsheet_row_number], buffer);
+                strlcpy(spreadsheet[spreadsheet_row_number], buffer, MAX_COLUMNS);
                 spreadsheet_row_number++;
             }
             i = 0;
@@ -422,14 +423,16 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             fprintf(fpout, MATERIAL_REC);
             fprintf(fpout, "%-18s", labels[record].material);
             fprintf(fpout, "\n");
-            strcpy(prev_material, labels[record].material);
+            strlcpy(prev_material, labels[record].material, LRG);
         }
     }
     // LABEL record (required). If the contents of .label are not "LBL", program aborts.
     char graphic_val_shrt[4] = {0};
     strncpy(graphic_val_shrt, labels[record].label, 3);
-    if (strcmp(graphic_val_shrt, "LBL") != 0)
+    if (strcmp(graphic_val_shrt, "LBL") != 0) {
+        printf("The first 3 characters of the record are not \"LBL\", record %d.\n", record);
         return 0;
+    }
     else {
         fprintf(fpout, "Z2BTLH01000");
         print_spaces(fpout, 19);
@@ -877,7 +880,7 @@ int main(int argc, char *argv[]) {
 
     // the labels array must be sorted by label number
 
-    sort_labels(labels);
+    //sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
