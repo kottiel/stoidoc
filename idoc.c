@@ -29,6 +29,9 @@
 /* length of GTIN-13                 */
 #define GTIN_13        13
 
+/* divide a GTIN by this value to isolate its first digit                */
+#define GTIN_FIRST_DIGIT 10000000000000
+
 /* the number of spaces to indent the TDline lines                       */
 #define TDLINE_INDENT  61
 
@@ -83,7 +86,6 @@ struct control_numbers {
 
 /** defining the struct variable as a new type for convenience           */
 typedef struct control_numbers Ctrl;
-
 
 /**
     Returns true (non-zero) if character-string parameter represents
@@ -583,10 +585,13 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
                 printf("Invalid GTIN check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
 
+            // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
             // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
-            int gtin_ctry_prefix = (int) (gtin / 10000000000000);
-            int gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * 10000000000000)) / 1000000);
+            int gtin_ctry_prefix = (int) (gtin / GTIN_FIRST_DIGIT);
+            int gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_FIRST_DIGIT)) / 1000000);
+
             if ((gtin_ctry_prefix > 4) ||
+                (gtin != 0) &&
                 (gtin_cpny_prefix != 4026704 &&
                  gtin_cpny_prefix != 5060112))
                 printf("Invalid GTIN prefix \"%d\" in record %d. BARCODETEXT record skipped.\n",
@@ -886,7 +891,7 @@ int main(int argc, char *argv[]) {
 
     sscanf(argv[1], "%[^.]%*[txt]", outputfile);
     strcat(outputfile, "_IDoc.txt");
-    printf("outputfile name is %s\n", outputfile);
+    printf("Creating IDoc file \"%s\"\n", outputfile);
 
     // check for optional command line parameter '-J'
     if (argc > 2) {
