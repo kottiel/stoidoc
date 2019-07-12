@@ -13,24 +13,28 @@
 #include "label.h"
 #include "strl.h"
 
-/* end of line new line character    */
+/* end of line new line character                                        */
 #define LF '\n'
 
-/* end of line new line character    */
-#define CR '\r'
-
-/* if the -F command line parameter is present, F_ is activated */
+/* if the -F command line parameter is present, F_ is activated          */
 //#define F_ "F_"
 #define F_ ""
 
-/* length of '_idoc->txt' extension  */
+/* length of '_idoc->txt' extension                                      */
 #define FILE_EXT_LEN   10
 
-/* length of GTIN-13                 */
+/* length of GTIN-13                                                     */
 #define GTIN_13        13
 
-/* divide a GTIN by this value to isolate its first digit                */
-#define GTIN_FIRST_DIGIT 10000000000000
+/* divide a 14-digit GTIN by this value to isolate its first digit       */
+#define GTIN_14_DIGIT 10000000000000
+
+/* divide a 13-digit GTIN by this value to isolate its first digit       */
+#define GTIN_13_DIGIT 1000000000000
+
+/* divide a GTIN by these values to isolate company prefix               */
+#define GTIN_14_CPNY_DIVISOR 1000000
+#define GTIN_13_CPNY_DIVISOR 100000
 
 /* the number of spaces to indent the TDline lines                       */
 #define TDLINE_INDENT  61
@@ -42,6 +46,8 @@
 #define ALT_GRAPHICS_PATH  "C:\\Users\\jkottiel\\Documents\\1 - Teleflex\\Labeling Resources\\Personal Graphics\\"
 
 /* determine the graphics path at run time                               */
+
+
 bool alt_path = false;
 
 /* global variable that holds the spreadsheets specific column headings  */
@@ -179,26 +185,27 @@ void read_spreadsheet(FILE *fp) {
     int i = 0;
 
     while ((c = (char) fgetc(fp)) != EOF) {
-        if (c == CR || c == LF) {
-            buffer[i] = '\0';
-            if (line_not_empty) {
-                if (spreadsheet_row_number >= spreadsheet_cap) {
-                    spreadsheet_expand();
+        if (c == LF) {
+            //check if preceded by "##" - in that case do nothing
+            if ((i > 1) && buffer[i - 1] != '#' || buffer[i - 2] != '#') {
+                buffer[i] = '\0';
+                if (line_not_empty) {
+                    if (spreadsheet_row_number >= spreadsheet_cap) {
+                        spreadsheet_expand();
+                    }
+                    spreadsheet[spreadsheet_row_number] =
+                            (char *) malloc(i * sizeof(char) + 2);
+                    strlcpy(spreadsheet[spreadsheet_row_number], buffer, MAX_COLUMNS);
+                    spreadsheet_row_number++;
                 }
-                spreadsheet[spreadsheet_row_number] =
-                        (char *) malloc(i * sizeof(char) + 2);
-                strlcpy(spreadsheet[spreadsheet_row_number], buffer, MAX_COLUMNS);
-                spreadsheet_row_number++;
+                i = 0;
+                line_not_empty = false;
             }
-            i = 0;
-            line_not_empty = false;
-
         } else {
             buffer[i++] = c;
             if (c != '\t')
                 if (c != '\r')
-                    if (c != '\n')
-                        line_not_empty = true;
+                    line_not_empty = true;
         }
     }
 }
@@ -398,8 +405,6 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // temporary variables to examine field contents
     char graphic_val[MED];
-
-
     char prev_material[MED] = {0};
 
     // MATERIAL record (optional)
@@ -435,8 +440,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     if (strcmp(graphic_val_shrt, "LBL") != 0) {
         printf("The first 3 characters of the record are not \"LBL\", record %d.\n", record);
         return 0;
-    }
-    else {
+    } else {
         fprintf(fpout, "Z2BTLH01000");
         print_spaces(fpout, 19);
         fprintf(fpout, "500000000000");
@@ -460,6 +464,20 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         int tdline_count = 0;
 
         char *token = labels[record].tdline;
+
+        //check for and remove any leading...
+        if (token[0] == '\"')
+            memmove(token, token + 1, (int) strlen(token));
+
+        // ...and/or trailing quotes
+        if (token[(int) strlen(token) - 1] == '\"')
+            token[(int) strlen(token) - 1] = '\0';
+
+        // and convert all instances of double quotes to single quotes
+        char *a;
+        while (a = strstr(token, "\"\""))
+            memmove(a, a + 1, (int) strlen(a));
+
         while (strlen(token) > 0) {
             fprintf(fpout, "Z2BTTX01000");
             print_spaces(fpout, 19);
@@ -472,21 +490,6 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             fprintf(fpout, "GRUNE  ENMATERIAL  ");
             fprintf(fpout, "%s", labels[record].label);
             print_spaces(fpout, TDLINE_INDENT);
-
-            //check for and remove any leading...
-            if (token[0] == '\"')
-                memmove(token, token + 1, (int) strlen(token));
-
-            // ...and/or trailing quotes
-            if (token[(int) strlen(token) - 1] == '\"')
-                token[(int) strlen(token) - 1] = '\0';
-
-            // and convert instances of double quotes to single quotes
-            char *a = strstr(token, "\"\"");
-            if (a != NULL) {
-                memmove(a, a + 1, (int) strlen(a));
-                token[(int) strlen(token)] = '\0';
-            }
 
             char *dpos = strstr(token, "##");
 
@@ -578,18 +581,22 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
             // convert string to long long integer to verify GTIN length and check digit
             long long gtin = strtoll(labels[record].gtin, &endptr, 10);
-            if (((strlen(labels[record].gtin) == GTIN_13 + 1) && (gtin % 10 == checkDigit(&gtin))) ||
-                (strlen(labels[record].gtin) == GTIN_13)) {
+            int gtin_ctry_prefix;
+            int gtin_cpny_prefix;
+            if ((strlen(labels[record].gtin) == GTIN_13 + 1) && (gtin % 10 == checkDigit(&gtin))) {
                 print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
+                gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+            } else if (strlen(labels[record].gtin) == GTIN_13) {
+                print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
+                gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
             } else
                 printf("Invalid GTIN check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
                        labels[record].gtin, record);
 
             // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
             // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
-            int gtin_ctry_prefix = (int) (gtin / GTIN_FIRST_DIGIT);
-            int gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_FIRST_DIGIT)) / 1000000);
-
             if ((gtin_ctry_prefix > 4) ||
                 (gtin != 0) &&
                 (gtin_cpny_prefix != 4026704 &&
