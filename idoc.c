@@ -77,7 +77,8 @@ char lookup[][2][LRG] = {
         {"NO",                             "blank-01"},
         {"N",                              "blank-01"},
         {"STERILEEO",                      "Sterile_EO"},
-        {"WECK_LOGO",                      "Wecklogo"}
+        {"WECK_LOGO",                      "Wecklogo"},
+        {"Z-entries must be even",         "Keep it even"}
 };
 
 /** global variable to maintain size of the SAP lookup array             */
