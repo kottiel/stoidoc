@@ -663,7 +663,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].size, contents, sizeof(labels[i].size));
             }
-/*        } else if (strcmp(token, "SIZELOGO") == 0) {
+        } else if (strcmp(token, "SIZELOGO") == 0) {
             cols->sizelogo = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
@@ -671,7 +671,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].sizelogo = true;
                 else
                     labels[i].sizelogo = false;
-            }*/
+            }
         } else if (strcmp(token, "STERILITYTYPE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);

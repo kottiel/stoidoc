@@ -64,18 +64,20 @@ int sequence_number = 1;
 
 /** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
-        {"CE",          "CE Mark"},
-        {"CE0120",      "CE_0120_Below"},
-        {"CE0123",      "CE123"},
-        {"CE0050",      "CE0050"},
-        {"HEMO_AUTO_L", "HemoAutoL"},
-        {"HEMO_L",      "HemolokL"},
-        {"HEMO_ML",     "HemolokML"},
-        {"HMOCLPTRD",   "HmoclpTrd"},
-        {"NO",          "blank-01"},
-        {"N",           "blank-01"},
-        {"STERILEEO",   "Sterile_EO"},
-        {"WECK_LOGO",   "Wecklogo"}
+        {"CE",                             "CE Mark"},
+        {"CE0120",                         "CE_0120_Below"},
+        {"CE0123",                         "CE123"},
+        {"CE0050",                         "CE0050"},
+        {"COOPRODUSWUSANDFOREIGNPACKUS",   "COOProdUSwUSandForeignPkUS"},
+        {"COOPRODUSWUSANDFOREIGNPACKMEX2", "COOProdUSwUSandFrnPackMex2"},
+        {"HEMO_AUTO_L",                    "HemoAutoL"},
+        {"HEMO_L",                         "HemolokL"},
+        {"HEMO_ML",                        "HemolokML"},
+        {"HMOCLPTRD",                      "HmoclpTrd"},
+        {"NO",                             "blank-01"},
+        {"N",                              "blank-01"},
+        {"STERILEEO",                      "Sterile_EO"},
+        {"WECK_LOGO",                      "Wecklogo"}
 };
 
 /** global variable to maintain size of the SAP lookup array             */
@@ -297,8 +299,8 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
             char *gnp = sap_lookup(col_value);
 
             if (gnp) {
-                char graphic_name[MED];
-                strncpy(graphic_name, gnp, MED - 1);
+                char graphic_name[LRG];
+                strncpy(graphic_name, gnp, LRG - 1);
                 print_graphic_path(fpout, strcat(graphic_name, ".tif"));
             } else {
                 print_graphic_path(fpout, strcat(cell_contents, ".tif"));
@@ -459,7 +461,12 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
 
-    if (cols->tdline) {
+    memcpy(graphic_val, labels[record].tdline, 4);
+    if ((cols->tdline) &&
+        (strlen(graphic_val) > 0) &&
+        (strcasecmp(graphic_val, "N/A") != 0) &&
+        (strcasecmp(graphic_val, "N") != 0)) {
+
         //* get the first token *//*
         int tdline_count = 0;
 
@@ -552,7 +559,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         int diff;
         while ((a = strstr(token, "\"\"")) != NULL) {
             diff = (int) (a - token);
-            memmove(token + diff, token + diff + 1, strlen(token) - 2);
+            memmove(token + diff, token + diff + 1, strlen(token) - 1);
         }
         print_info_column_header(fpout, "SIZE", labels[record].size, idoc);
 
@@ -733,8 +740,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         print_boolean_record(fpout, "SERIAL", labels[record].serial, F_ "Serial Number.tif", idoc);
 
     // SIZELOGO record (optional)
-    /*if (cols->sizelogo) {
-        print_boolean_record(fpout, "SIZELOGO", labels[record].sizelogo, "Size Logo.tif", idoc);*/
+    if (cols->sizelogo)
+        print_boolean_record(fpout, "SIZELOGO", labels[record].sizelogo, "blank-01.tif", idoc);
 
     // TFXLOGO record (Optional: Y / N / blank)
     if (cols->tfxlogo)
@@ -897,7 +904,7 @@ int main(int argc, char *argv[]) {
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
     sscanf(argv[1], "%[^.]%*[txt]", outputfile);
-    strcat(outputfile, "_IDoc.txt");
+    strcat(outputfile, "_IDoc (stoidoc).txt");
     printf("Creating IDoc file \"%s\"\n", outputfile);
 
     // check for optional command line parameter '-J'

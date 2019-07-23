@@ -19,7 +19,7 @@
 #define LRG                    41
 #define MED                    30
 #define MAX_TEMPLATE_LEN       18
-#define MAX_LEVEL              11
+#define MAX_LEVEL              18
 #define MAX_LABEL_LEN          10
 #define MAX_IPN_LEN            10
 #define MAX_GTIN_LEN           15
