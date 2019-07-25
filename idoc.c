@@ -65,20 +65,19 @@ int sequence_number = 1;
 /** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
         {"CE",                             "CE Mark"},
+        {"CE0050",                         "CE0050"},
         {"CE0120",                         "CE_0120_Below"},
         {"CE0123",                         "CE123"},
-        {"CE0050",                         "CE0050"},
-        {"COOPRODUSWUSANDFOREIGNPACKUS",   "COOProdUSwUSandForeignPkUS"},
         {"COOPRODUSWUSANDFOREIGNPACKMEX2", "COOProdUSwUSandFrnPackMex2"},
+        {"COOPRODUSWUSANDFOREIGNPACKUS",   "COOProdUSwUSandForeignPkUS"},
         {"HEMO_AUTO_L",                    "HemoAutoL"},
         {"HEMO_L",                         "HemolokL"},
         {"HEMO_ML",                        "HemolokML"},
         {"HMOCLPTRD",                      "HmoclpTrd"},
-        {"NO",                             "blank-01"},
         {"N",                              "blank-01"},
+        {"NO",                             "blank-01"},
         {"STERILEEO",                      "Sterile_EO"},
-        {"WECK_LOGO",                      "Wecklogo"},
-        {"Z-entries must be even",         "Keep it even"}
+        {"WECK_LOGO",                      "Wecklogo"}
 };
 
 /** global variable to maintain size of the SAP lookup array             */
@@ -142,6 +141,22 @@ int checkDigit(const long long *llp) {
 }
 
 /**
+    check to ensure SAP Characteristic Value Lookup table is alphabetized
+    and that all entries are unique
+    @return true if all entries are alphabetized and there are no duplicates.
+*/
+bool check_lookup_array() {
+    for (int i = 0; i < lookupsize - 1; i++) {
+        if (strcasecmp(lookup[i][0], lookup[i + 1][0]) >= 0) {
+            printf("Correct values in SAP Characteristics array: %d) %s, %d) %s\n", i, lookup[i][0], i + 1,
+                   lookup[i + 1][0]);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/**
     perform a binary search in the lookup array to find the SAP
     characteristic definition given the characteristic value
     @param needle is the search term
@@ -152,6 +167,7 @@ char *sap_lookup(char *needle) {
     int start = 0;
     int end = lookupsize - 1;
     int middle = 0;
+    int result = 0;
 
     bool exit = false;
     char *haystack;
@@ -162,9 +178,11 @@ char *sap_lookup(char *needle) {
         else
             exit = true;
         haystack = lookup[middle][0];
-        if (strcasecmp(needle, haystack) == 0) {
+
+        result = strcasecmp(needle, haystack);
+        if (result == 0) {
             return lookup[middle][1];
-        } else if (strcasecmp(needle, haystack) < 0) {
+        } else if (result < 0) {
             end = middle - 1;
         } else {
             start = middle + 1;
@@ -871,6 +889,9 @@ int main(int argc, char *argv[]) {
     typedef struct control_numbers Ctrl;
 
     Ctrl idoc = {"2541435", 0, 1, 0, 0};
+
+    if (!check_lookup_array())
+        return EXIT_FAILURE;
 
     if (spreadsheet_init() != 0) {
         printf("Could not initialize spreadsheet array. Exiting\n");
