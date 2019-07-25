@@ -20,8 +20,8 @@
 //#define F_ "F_"
 #define F_ ""
 
-/* length of '_idoc->txt' extension                                      */
-#define FILE_EXT_LEN   10
+/* length of '_idoc (stoidoc)->txt' extension                            */
+#define FILE_EXT_LEN   20
 
 /* length of GTIN-13                                                     */
 #define GTIN_13        13
