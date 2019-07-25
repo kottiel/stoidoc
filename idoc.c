@@ -295,6 +295,7 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
         } else if (equals_no(col_value)) {
             print_graphic_path(fpout, "blank-01.tif");
         } else {
+            
             // graphic_name will be converted to its SAP lookup value from the static lookup array
             // or, if there is no lookup value, graphic_name itself will be used
             char *gnp = sap_lookup(col_value);
