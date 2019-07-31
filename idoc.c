@@ -46,8 +46,6 @@
 #define ALT_GRAPHICS_PATH  "C:\\Users\\jkottiel\\Documents\\1 - Teleflex\\Labeling Resources\\Personal Graphics\\"
 
 /* determine the graphics path at run time                               */
-
-
 bool alt_path = false;
 
 /* global variable that holds the spreadsheets specific column headings  */
@@ -61,6 +59,8 @@ int spreadsheet_row_number = 0;
 
 /* global variable to track the idoc sequence number                     */
 int sequence_number = 1;
+
+char prev_material[MED] = {0};
 
 /** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
@@ -313,7 +313,7 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
         } else if (equals_no(col_value)) {
             print_graphic_path(fpout, "blank-01.tif");
         } else {
-            
+
             // graphic_name will be converted to its SAP lookup value from the static lookup array
             // or, if there is no lookup value, graphic_name itself will be used
             char *gnp = sap_lookup(col_value);
@@ -427,7 +427,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // temporary variables to examine field contents
     char graphic_val[MED];
-    char prev_material[MED] = {0};
+    //char prev_material[MED] = {0};
 
     // MATERIAL record (optional)
     // (this is skipped if the previous material record is the same)
@@ -481,10 +481,12 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
 
-    memcpy(graphic_val, labels[record].tdline, 4);
+    if (cols->tdline)
+        memcpy(graphic_val, labels[record].tdline, 4);
+
     if ((cols->tdline) &&
         (strlen(graphic_val) > 0) &&
-        (strcasecmp(graphic_val, "N/A") != 0) &&
+        (strcasecmp(graphic_val, "n/a") != 0) &&
         (strcasecmp(graphic_val, "N") != 0)) {
 
         //* get the first token *//*
@@ -601,8 +603,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     /** BARCODETEXT record (optional) */
     char gtin_digit[2] = {0};
     strncpy(gtin_digit, labels[record].gtin, 1);
-
     if ((cols->barcodetext) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+
         char *endptr;
         if (isNumeric(labels[record].gtin)) {
 
@@ -610,30 +612,33 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             long long gtin = strtoll(labels[record].gtin, &endptr, 10);
             int gtin_ctry_prefix;
             int gtin_cpny_prefix;
-            if ((strlen(labels[record].gtin) == GTIN_13 + 1) && (gtin % 10 == checkDigit(&gtin))) {
-                print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
+
+            // 14-digit GTIN - verify the checkDigit
+            if ((strlen(labels[record].gtin) == GTIN_13 + 1)) {
+                if (gtin % 10 != checkDigit(&gtin)) {
+                    printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gtin, record);
+                }
                 gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
                 gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+
             } else if (strlen(labels[record].gtin) == GTIN_13) {
-                print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
                 gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
                 gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
-            } else
-                printf("Invalid GTIN check digit or length \"%s\" in record %d. BARCODETEXT record skipped.\n",
-                       labels[record].gtin, record);
+            } else {
+                printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gtin, record);
+            }
 
             // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
             // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
-            if ((gtin_ctry_prefix > 4) ||
-                (gtin != 0) &&
-                (gtin_cpny_prefix != 4026704 &&
-                 gtin_cpny_prefix != 5060112))
-                printf("Invalid GTIN prefix \"%d\" in record %d. BARCODETEXT record skipped.\n",
-                       gtin_cpny_prefix, record);
+            if ((gtin_ctry_prefix > 4) || (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
+                printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
 
-        } else
-            printf("Nonnumeric GTIN \"%s\" in record %d. BARCODETEXT record skipped.\n",
-                   labels[record].gtin, record);
+            // GTIN non-numeric so we'll report that it's non-numeric before printing.
+        } else {
+            printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].gtin, record);
+        }
+
+        print_info_column_header(fpout, "BARCODETEXT", labels[record].gtin, idoc);
     }
 
     // LTNUMBER record (optional)
@@ -921,8 +926,7 @@ int main(int argc, char *argv[]) {
     }
 
     // the labels array must be sorted by label number
-
-    //sort_labels(labels);
+    sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 

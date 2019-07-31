@@ -113,6 +113,7 @@ typedef struct {
     bool singlepatientuse;
     bool singleuseonly;
     bool tfxlogo;
+
 } Label_record;
 
 /**
@@ -213,6 +214,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols);
 */
 char *get_token(char *buffer, char tab_str);
 
+/**
+ * Given a specific delimiter, extracts the value of that field with a delimited char string.
+ * Returns the length of that value if it exists and isn't "N" or "NO"
+ * @param contents
+ * @param i
+ * @param count
+ * @param tab_str
+ * @return
+ */
 int get_field_contents_from_row(char *contents, int i, int count, char tab_str);
 
 int peek_nth_token(int n, const char *buffer, char delimiter);
@@ -227,7 +237,7 @@ int spreadsheet_init();
 
 int spreadsheet_expand();
 
-void sort_labels(Label_record *labels);
+int sort_labels(Label_record *labels);
 
 void swap_label_records(Label_record *labels, int i, int min_index);
 
