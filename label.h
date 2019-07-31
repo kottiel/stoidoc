@@ -74,10 +74,17 @@ typedef struct {
     char sterilitytype[MED];
     char temperaturerange[MED];
     char version[MED];
+    char oldlabel[MED];
+    char oldtemplate[MED];
+    char description[MED];
+    char pcode[MED];
+    char ltnumber[MED];
+    char ipn[MED];
+    char barcodetext[MAX_GTIN_LEN];
     char gtin[MAX_GTIN_LEN];
     char level[MAX_LEVEL];
     char label[MAX_LABEL_LEN];
-    char ipn[MAX_IPN_LEN];
+
     char quantity[LRG];
     char template[MAX_TEMPLATE_LEN];
     char bomlevel[SML];
@@ -129,6 +136,7 @@ typedef struct {
     unsigned short ce0120;
     unsigned short consultifu;
     unsigned short coostate;
+    unsigned short description;
     unsigned short distby;
     unsigned short donotusedam;
     unsigned short ecrep;
@@ -136,7 +144,9 @@ typedef struct {
     unsigned short electroifu;
     unsigned short expdate;
     unsigned short flgraphic;
+    unsigned short gtin;
     unsigned short insertgraphic;
+    unsigned short ipn;
     unsigned short keepawayheat;
     unsigned short keepdry;
     unsigned short label;
@@ -165,10 +175,15 @@ typedef struct {
     unsigned short mfgdate;
     unsigned short nonsterile;
     unsigned short noresterile;
+    unsigned short oldlabel;
+    unsigned short oldtemplate;
     unsigned short patentstatement;
+    unsigned short pcode;
     unsigned short phtdehp;
     unsigned short phtbbp;
     unsigned short phtdinp;
+    unsigned short prevlabel;
+    unsigned short prevtemplate;
     unsigned short pvcfree;
     unsigned short quantity;
     unsigned short ref;

@@ -184,7 +184,8 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     strlcpy(labels[i].label, "", 1);
                 }
             }
-        } else if (strcmp(token, "MATERIAL") == 0) {
+        } else if ((strcmp(token, "MATERIAL") == 0) ||
+                   (strcmp(token, "PCODE") == 0)) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
                     strlcpy(labels[i].material, contents, sizeof(labels[i].material));
@@ -209,9 +210,17 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "BARCODETEXT") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
+                strlcpy(labels[i].barcodetext, contents, sizeof(labels[i].barcodetext));
                 if (!(equals_no(contents)))
                     cols->barcodetext = count;
+            }
+
+        } else if (strcmp(token, "GTIN") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
+                if (!(equals_no(contents)))
+                    cols->gtin = count;
             }
 
         } else if (strcmp(token, "BOMLEVEL") == 0) {
@@ -256,8 +265,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 if (strcmp("Y", contents) == 0) {
                     labels[i].consultifu = true;
                     cols->consultifu = count;
-                }
-                else
+                } else
                     labels[i].consultifu = false;
             }
         } else if (strcmp(token, "CONTAINSLATEX") == 0) {
@@ -275,6 +283,13 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 strlcpy(labels[i].coostate, contents, sizeof(labels[i].coostate));
                 if (!(equals_no(contents)))
                     cols->coostate = count;
+            }
+        } else if (strcmp(token, "DESCRIPTION") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].description, contents, sizeof(labels[i].description));
+                if (!(equals_no(contents)))
+                    cols->description = count;
             }
         } else if (strcmp(token, "DISTRIBUTEDBY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -331,8 +346,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     if (strcmp("Y", contents) == 0) {
                         labels[i].expdate = true;
                         cols->expdate = count;
-                    }
-                    else
+                    } else
                         labels[i].expdate = false;
                 }
             }
@@ -494,9 +508,17 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "LTNUMBER") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                strncpy(labels[i].ipn, contents, sizeof(labels[0].ipn));
+                strncpy(labels[i].ltnumber, contents, sizeof(labels[0].ltnumber));
                 if (strlen(contents) && (!(equals_no(contents))))
                     cols->ltnumber = count;
+            }
+
+        } else if (strcmp(token, "IPN") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strncpy(labels[i].ipn, contents, sizeof(labels[0].ipn));
+                if (strlen(contents) && (!(equals_no(contents))))
+                    cols->ipn = count;
             }
         } else if (strcmp(token, "MANINBOX") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -551,6 +573,20 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 } else
                     labels[i].nonsterile = false;
             }
+        } else if (strcmp(token, "OLDLABEL") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].oldlabel, contents, sizeof(labels[i].oldlabel));
+                if (strlen(contents) && (!(equals_no(contents))))
+                    cols->oldlabel = count;
+            }
+        } else if (strcmp(token, "OLDTEMPLATE") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].oldtemplate, contents, sizeof(labels[i].oldtemplate));
+                if (strlen(contents) && (!(equals_no(contents))))
+                    cols->oldtemplate = count;
+            }
         } else if (strcmp(token, "PATENTSTA") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
@@ -565,8 +601,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     if (strcmp("Y", contents) == 0) {
                         labels[i].phtdehp = true;
                         cols->phtdehp = count;
-                    }
-                    else
+                    } else
                         labels[i].phtdehp = false;
                 }
             }
@@ -576,8 +611,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 if (strcmp("Y", contents) == 0) {
                     labels[i].phtbbp = true;
                     cols->phtbbp = count;
-                }
-                else
+                } else
                     labels[i].phtbbp = false;
             }
         } else if (strcmp(token, "PHTDINP") == 0) {
@@ -586,8 +620,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 if (strcmp("Y", contents) == 0) {
                     labels[i].phtdinp = true;
                     cols->phtdinp = count;
-                }
-                else
+                } else
                     labels[i].phtdinp = false;
             }
         } else if (strcmp(token, "PVCFREE") == 0) {
