@@ -48,6 +48,9 @@
 /* determine the graphics path at run time                               */
 bool alt_path = false;
 
+/* whether or not to include non-SAP fields in IDoc                      */
+bool non_SAP_fields = false;
+
 /* global variable that holds the spreadsheets specific column headings  */
 char **spreadsheet;
 
@@ -640,10 +643,10 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         print_info_column_header(fpout, "BARCODETEXT", labels[record].barcodetext, idoc);
     }
 
-    /** GTIN record (optional) */
+    /** GTIN record (optional) - this is a non-SAP field that prints only if [-n] flag is present at runtime */
     char gtin_digit1[2] = {0};
     strncpy(gtin_digit1, labels[record].gtin, 1);
-    if ((cols->gtin) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+    if ((non_SAP_fields) && (cols->gtin) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
 
         char *endptr;
         if (isNumeric(labels[record].gtin)) {
@@ -962,7 +965,7 @@ int main(int argc, char *argv[]) {
     FILE *fp, *fpout;
 
     if ((argc != 2) && (argc != 3)) {
-        printf("usage: ./idoc filename.txt -J\n");
+        printf("usage: %s filename.txt [-J] [-F] [-n]\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -992,8 +995,19 @@ int main(int argc, char *argv[]) {
 
     // check for optional command line parameter '-J'
     if (argc > 2) {
-        if ((argv[2] != NULL) && (strncmpci(argv[2], "-J", 2) == 0)) {
+        if (((argv[2] != NULL) && (strncmpci(argv[2], "-J", 2) == 0)) ||
+            ((argv[3] != NULL) && (strncmpci(argv[3], "-J", 2) == 0))) {
             alt_path = true;
+        }
+    }
+
+    // check for optional command line parameter '-n'
+    // -n prints "non-standard" column names in the IDoc:
+    // GTIN, IPN, OLDLABEL, OLDTEMPLATE, DESCRIPTION, PREVLABEL and PREVTEMPLATE
+    if (argc > 2) {
+        if (((argv[2] != NULL) && (strncmpci(argv[2], "-n", 2) == 0)) ||
+            ((argv[3] != NULL) && (strncmpci(argv[3], "-n", 2) == 0))) {
+            non_SAP_fields = true;
         }
     }
 
