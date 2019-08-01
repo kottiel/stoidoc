@@ -279,13 +279,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             }
 
         } else if (strcmp(token, "GTIN") == 0) {
-            if (non_SAP_fields)
+            if (non_SAP_fields) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
                     if (!(equals_no(contents)))
                         cols->gtin = count;
                 }
+            } else
+                printf("Ignoring column \"%s\"\n", token);
 
 
         } else if (strcmp(token, "BOMLEVEL") == 0) {
@@ -350,12 +352,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     cols->coostate = count;
             }
         } else if (strcmp(token, "DESCRIPTION") == 0) {
-            for (int i = 1; i < spreadsheet_row_number; i++) {
-                get_field_contents_from_row(contents, i, count, tab_str);
-                strlcpy(labels[i].description, contents, sizeof(labels[i].description));
-                if (!(equals_no(contents)))
-                    cols->description = count;
-            }
+            if (non_SAP_fields)
+                for (int i = 1; i < spreadsheet_row_number; i++) {
+                    get_field_contents_from_row(contents, i, count, tab_str);
+                    strlcpy(labels[i].description, contents, sizeof(labels[i].description));
+                    if (!(equals_no(contents)))
+                        cols->description = count;
+                }
+            printf("Ignoring column \"%s\"\n", token);
+
         } else if (strcmp(token, "DISTRIBUTEDBY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
@@ -639,19 +644,25 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].nonsterile = false;
             }
         } else if (strcmp(token, "OLDLABEL") == 0) {
-            for (int i = 1; i < spreadsheet_row_number; i++) {
-                get_field_contents_from_row(contents, i, count, tab_str);
-                strlcpy(labels[i].oldlabel, contents, sizeof(labels[i].oldlabel));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->oldlabel = count;
-            }
+            if (non_SAP_fields)
+                for (int i = 1; i < spreadsheet_row_number; i++) {
+                    get_field_contents_from_row(contents, i, count, tab_str);
+                    strlcpy(labels[i].oldlabel, contents, sizeof(labels[i].oldlabel));
+                    if (strlen(contents) && (!(equals_no(contents))))
+                        cols->oldlabel = count;
+                }
+            else
+                printf("Ignoring column \"%s\"\n", token);
+
         } else if (strcmp(token, "OLDTEMPLATE") == 0) {
-            for (int i = 1; i < spreadsheet_row_number; i++) {
-                get_field_contents_from_row(contents, i, count, tab_str);
-                strlcpy(labels[i].oldtemplate, contents, sizeof(labels[i].oldtemplate));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->oldtemplate = count;
-            }
+            if (non_SAP_fields)
+                for (int i = 1; i < spreadsheet_row_number; i++) {
+                    get_field_contents_from_row(contents, i, count, tab_str);
+                    strlcpy(labels[i].oldtemplate, contents, sizeof(labels[i].oldtemplate));
+                    if (strlen(contents) && (!(equals_no(contents))))
+                        cols->oldtemplate = count;
+                }
+            printf("Ignoring column \"%s\"\n", token);
         } else if (strcmp(token, "PATENTSTA") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);

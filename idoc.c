@@ -644,46 +644,49 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** GTIN record (optional) - this is a non-SAP field that prints only if [-n] flag is present at runtime */
-    if (non_SAP_fields) {
-        char gtin_digit1[2] = {0};
-        strncpy(gtin_digit1, labels[record].gtin, 1);
+    if (cols->gtin) {
+        if (non_SAP_fields) {
+            char gtin_digit1[2] = {0};
+            strncpy(gtin_digit1, labels[record].gtin, 1);
 
-        if ((cols->gtin) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+            if ((strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
 
-            char *endptr;
-            if (isNumeric(labels[record].gtin)) {
+                char *endptr;
+                if (isNumeric(labels[record].gtin)) {
 
-                // convert string to long long integer to verify GTIN length and check digit
-                long long gtin = strtoll(labels[record].gtin, &endptr, 10);
-                int gtin_ctry_prefix;
-                int gtin_cpny_prefix;
+                    // convert string to long long integer to verify GTIN length and check digit
+                    long long gtin = strtoll(labels[record].gtin, &endptr, 10);
+                    int gtin_ctry_prefix;
+                    int gtin_cpny_prefix;
 
-                // 14-digit GTIN - verify the checkDigit
-                if ((strlen(labels[record].gtin) == GTIN_13 + 1)) {
-                    if (gtin % 10 != checkDigit(&gtin)) {
-                        printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gtin, record);
+                    // 14-digit GTIN - verify the checkDigit
+                    if ((strlen(labels[record].gtin) == GTIN_13 + 1)) {
+                        if (gtin % 10 != checkDigit(&gtin)) {
+                            printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gtin, record);
+                        }
+                        gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
+                        gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+
+                    } else if (strlen(labels[record].gtin) == GTIN_13) {
+                        gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
+                        gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+                    } else {
+                        printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gtin,
+                               record);
                     }
-                    gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
-                    gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
 
-                } else if (strlen(labels[record].gtin) == GTIN_13) {
-                    gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
-                    gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+                    // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
+                    // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
+                    if ((gtin_ctry_prefix > 4) ||
+                        (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
+                        printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
+
+                    // GTIN non-numeric so we'll report that it's non-numeric before printing.
                 } else {
-                    printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gtin, record);
+                    printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].gtin, record);
                 }
-
-                // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
-                // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
-                if ((gtin_ctry_prefix > 4) ||
-                    (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
-                    printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
-
-                // GTIN non-numeric so we'll report that it's non-numeric before printing.
-            } else {
-                printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].gtin, record);
+                print_info_column_header(fpout, "GTIN", labels[record].gtin, idoc);
             }
-            print_info_column_header(fpout, "GTIN", labels[record].gtin, idoc);
         }
     }
     // LTNUMBER record (optional)
@@ -1069,8 +1072,9 @@ int main(int argc, char *argv[]) {
         free(spreadsheet[i]);
     free(spreadsheet);
 
-    for (int i = 1; i < spreadsheet_row_number; i++)
-        free(labels[i].tdline);
+    if (columns.tdline)
+        for (int i = 1; i < spreadsheet_row_number; i++)
+            free(labels[i].tdline);
 
     free(labels);
 
