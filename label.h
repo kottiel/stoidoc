@@ -39,6 +39,9 @@ extern char **spreadsheet;
 extern int spreadsheet_cap;
 extern int spreadsheet_row_number;
 
+/* whether or not to include non-SAP fields in IDoc                      */
+extern bool non_SAP_fields;
+
 /**
 
 */
@@ -76,6 +79,8 @@ typedef struct {
     char version[MED];
     char oldlabel[MED];
     char oldtemplate[MED];
+    char prevlabel[MED];
+    char prevtemplate[MED];
     char description[MED];
     char pcode[MED];
     char ltnumber[MED];
@@ -204,6 +209,8 @@ typedef struct {
     unsigned short version;
 
 } Column_header;
+
+int duplicate_column_names(const char *column_names);
 
 /**
     identifies the column headings in a line and assigns true values to the

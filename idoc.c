@@ -644,54 +644,59 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** GTIN record (optional) - this is a non-SAP field that prints only if [-n] flag is present at runtime */
-    char gtin_digit1[2] = {0};
-    strncpy(gtin_digit1, labels[record].gtin, 1);
-    if ((non_SAP_fields) && (cols->gtin) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+    if (non_SAP_fields) {
+        char gtin_digit1[2] = {0};
+        strncpy(gtin_digit1, labels[record].gtin, 1);
 
-        char *endptr;
-        if (isNumeric(labels[record].gtin)) {
+        if ((cols->gtin) && (strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
 
-            // convert string to long long integer to verify GTIN length and check digit
-            long long gtin = strtoll(labels[record].gtin, &endptr, 10);
-            int gtin_ctry_prefix;
-            int gtin_cpny_prefix;
+            char *endptr;
+            if (isNumeric(labels[record].gtin)) {
 
-            // 14-digit GTIN - verify the checkDigit
-            if ((strlen(labels[record].gtin) == GTIN_13 + 1)) {
-                if (gtin % 10 != checkDigit(&gtin)) {
-                    printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gtin, record);
+                // convert string to long long integer to verify GTIN length and check digit
+                long long gtin = strtoll(labels[record].gtin, &endptr, 10);
+                int gtin_ctry_prefix;
+                int gtin_cpny_prefix;
+
+                // 14-digit GTIN - verify the checkDigit
+                if ((strlen(labels[record].gtin) == GTIN_13 + 1)) {
+                    if (gtin % 10 != checkDigit(&gtin)) {
+                        printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gtin, record);
+                    }
+                    gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
+                    gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+
+                } else if (strlen(labels[record].gtin) == GTIN_13) {
+                    gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
+                    gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+                } else {
+                    printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gtin, record);
                 }
-                gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
-                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
 
-            } else if (strlen(labels[record].gtin) == GTIN_13) {
-                gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
-                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+                // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
+                // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
+                if ((gtin_ctry_prefix > 4) ||
+                    (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
+                    printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
+
+                // GTIN non-numeric so we'll report that it's non-numeric before printing.
             } else {
-                printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gtin, record);
+                printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].gtin, record);
             }
-
-            // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
-            // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
-            if ((gtin_ctry_prefix > 4) || (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
-                printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
-
-            // GTIN non-numeric so we'll report that it's non-numeric before printing.
-        } else {
-            printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].gtin, record);
+            print_info_column_header(fpout, "GTIN", labels[record].gtin, idoc);
         }
-        print_info_column_header(fpout, "GTIN", labels[record].gtin, idoc);
     }
-
     // LTNUMBER record (optional)
     if ((cols->ltnumber) && (strlen(labels[record].ltnumber) > 0)) {
         print_info_column_header(fpout, "LTNUMBER", labels[record].ltnumber, idoc);
     }
 
-    // IPN record (optional)
-    if ((cols->ipn) && (strlen(labels[record].ipn) > 0)) {
-        print_info_column_header(fpout, "IPN", labels[record].ipn, idoc);
-    }
+    // IPN record (optional) - - this is a non-SAP field that prints only if [-n] flag is present at runtime */
+    if (non_SAP_fields)
+        if ((cols->ipn) && (strlen(labels[record].ipn) > 0)) {
+            print_info_column_header(fpout, "IPN", labels[record].ipn, idoc);
+        }
+
 
     //
     // GRAPHIC01 - GRAPHIC14 Fields (optional)
@@ -859,18 +864,6 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     if (cols->latexstate)
         print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, "default", idoc);
 
-    // OLDLABEL record (optional)
-    if (cols->oldlabel)
-        print_graphic_column_header(fpout, "OLDLABEL", labels[record].oldlabel, "default", idoc);
-
-    // DESCRIPTION record (optional)
-    if (cols->oldlabel)
-        print_graphic_column_header(fpout, "DESCRIPTION", labels[record].description, "default", idoc);
-
-    // OLDTEMPLATE record (optional)
-    if (cols->oldlabel)
-        print_graphic_column_header(fpout, "OLDTEMPLATE", labels[record].oldtemplate, "default", idoc);
-
     // LOGO1 record (optional)
     if (cols->logo1)
         print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, "default", idoc);
@@ -929,7 +922,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // BOMLEVEL record (optional)
     if (cols->bomlevel)
-        print_graphic_column_header(fpout, "BOMLEVEL", labels[record].bomlevel, "default", idoc);
+        print_info_column_header(fpout, "BOMLEVEL", labels[record].bomlevel, idoc);
 
     // VERSION record (optional)
     if (cols->version)
@@ -939,6 +932,37 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     if (cols->insertgraphic)
         print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "LMAFASTRACH.tif", idoc);
 
+    if (non_SAP_fields) {
+        // OLDLABEL record (optional)
+        if (cols->oldlabel)
+            print_info_column_header(fpout, "OLDLABEL", labels[record].oldlabel, idoc);
+
+        // OLDTEMPLATE record (optional)
+        if (cols->oldtemplate)
+            print_info_column_header(fpout, "OLDTEMPLATE", labels[record].oldtemplate, idoc);
+
+        // PREVLABEL record (optional)
+        if (cols->prevlabel)
+            print_info_column_header(fpout, "PREVLABEL", labels[record].prevlabel, idoc);
+
+        // PREVTEMPLATE record (optional)
+        if (cols->prevtemplate)
+            print_info_column_header(fpout, "PREVTEMPLATE", labels[record].prevtemplate, idoc);
+
+        // DESCRIPTION record (optional)
+        if (cols->description) {
+            //check for and remove any leading...
+            if (labels[record].description[0] == '\"')
+                memmove(labels[record].description, labels[record].description + 1,
+                        (int) strlen(labels[record].description));
+
+            // ...and/or trailing quotes
+            if (labels[record].description[(int) strlen(labels[record].description) - 1] == '\"')
+                labels[record].description[(int) strlen(labels[record].description) - 1] = '\0';
+
+            print_info_column_header(fpout, "DESCRIPTION", labels[record].description, idoc);
+        }
+    }
     return 1;
 }
 
@@ -969,30 +993,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if ((fp = fopen(argv[1], "r")) == NULL) {
-        printf("File not found.\n");
-        return EXIT_FAILURE;
-    } else {
-        read_spreadsheet(fp);
-    }
-    fclose(fp);
-
-    labels = (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
-
-    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
-        printf("Program quitting.\n");
-        return EXIT_FAILURE;
-    }
-
-    // the labels array must be sorted by label number
-    sort_labels(labels);
-
-    char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
-
-    sscanf(argv[1], "%[^.]%*[txt]", outputfile);
-    strcat(outputfile, "_IDoc (stoidoc).txt");
-    printf("Creating IDoc file \"%s\"\n", outputfile);
-
     // check for optional command line parameter '-J'
     if (argc > 2) {
         if (((argv[2] != NULL) && (strncmpci(argv[2], "-J", 2) == 0)) ||
@@ -1008,8 +1008,40 @@ int main(int argc, char *argv[]) {
         if (((argv[2] != NULL) && (strncmpci(argv[2], "-n", 2) == 0)) ||
             ((argv[3] != NULL) && (strncmpci(argv[3], "-n", 2) == 0))) {
             non_SAP_fields = true;
+            printf("Including non-SAP column headings in IDoc. Run program without '-n' flag to remove.\n");
         }
     }
+
+    if ((fp = fopen(argv[1], "r")) == NULL) {
+        printf("File not found.\n");
+        return EXIT_FAILURE;
+    } else {
+        read_spreadsheet(fp);
+    }
+    fclose(fp);
+
+    labels = (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
+
+    // check spreadsheet columns for duplicates
+    if (duplicate_column_names(spreadsheet[0])) {
+        printf("Duplicate column names in spreadsheet. Aborting.\n");
+        return EXIT_FAILURE;
+    }
+
+    // move data into label_record fields by column header
+    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
+        printf("Problem reading spreadsheet. Aborting.\n");
+        return EXIT_FAILURE;
+    }
+
+    // the labels array must be sorted by label number
+    sort_labels(labels);
+
+    char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
+
+    sscanf(argv[1], "%[^.]%*[txt]", outputfile);
+    strcat(outputfile, "_IDoc (stoidoc).txt");
+    printf("Creating IDoc file \"%s\"\n", outputfile);
 
     if ((fpout = fopen(outputfile, "w")) == NULL) {
         printf("Could not open output file %s", outputfile);

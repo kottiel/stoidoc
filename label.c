@@ -164,6 +164,66 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
         return length;
 }
 
+int duplicate_column_names(const char *cols) {
+
+    char buffer[MAX_COLUMNS];
+    unsigned short count = 0;
+    char tab_str = TAB;
+    char **column_names;
+
+    char min_column[MED], temp[MED];
+    bool sorted = true;
+    int return_code = 0;
+
+    strcpy(buffer, cols);
+
+    // create an array of column names
+    column_names = (char **) malloc(sizeof(char *));
+    while (strlen(buffer) > 0) {
+
+        // Keep extracting tokens while the delimiter is present in buffer
+        char *token = get_token(buffer, tab_str);
+        if (strlen(token)) {
+            column_names = (char **) realloc(column_names, sizeof(char *) + count * sizeof(char *));
+            column_names[count] = (char *) malloc(sizeof(char *) + sizeof(token) + 1);
+            strcpy(column_names[count], token);
+            count++;
+            free(token);
+        }
+    }
+
+    // sort the list
+    for (int i = 0; i < count; i++) {
+        int min_index = i;
+        strcpy(min_column, column_names[i]);
+
+        for (int j = i + 1; j < count; j++) {
+            if (strcmp(column_names[j], min_column) < 0) {
+                strcpy(min_column, column_names[j]);
+                min_index = j;
+            }
+        }
+
+        if (i != min_index) {
+            strcpy(temp, column_names[i]);
+            strcpy(column_names[i], column_names[min_index]);
+            strcpy(column_names[min_index], temp);
+            sorted = false;
+        }
+    }
+
+    for (int i = 0; i < count - 1; i++)
+        if (strcmp(column_names[i], column_names[i + 1]) == 0)
+            return_code = 1;
+
+    for (int i = 0; i < count; i++)
+        free(column_names[i]);
+
+    free(column_names);
+    return return_code;
+}
+
+
 int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
     unsigned short count = 0;
 
@@ -192,6 +252,9 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     cols->material = count;
                 }
             }
+            if (strcmp(token, "PCODE") == 0)
+                printf("Column \"PCODE\" subsituted for \"MATERIAL\"\n");
+
         } else if (strcmp(token, "TDLINE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
@@ -216,12 +279,14 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             }
 
         } else if (strcmp(token, "GTIN") == 0) {
-            for (int i = 1; i < spreadsheet_row_number; i++) {
-                get_field_contents_from_row(contents, i, count, tab_str);
-                strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
-                if (!(equals_no(contents)))
-                    cols->gtin = count;
-            }
+            if (non_SAP_fields)
+                for (int i = 1; i < spreadsheet_row_number; i++) {
+                    get_field_contents_from_row(contents, i, count, tab_str);
+                    strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
+                    if (!(equals_no(contents)))
+                        cols->gtin = count;
+                }
+
 
         } else if (strcmp(token, "BOMLEVEL") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
