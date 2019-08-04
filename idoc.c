@@ -79,7 +79,9 @@ char lookup[][2][LRG] = {
         {"HMOCLPTRD",                      "HmoclpTrd"},
         {"N",                              "blank-01"},
         {"NO",                             "blank-01"},
+        {"NONSTERILE",                     "blank-01"},
         {"STERILEEO",                      "Sterile_EO"},
+        {"STERILER",                       "SterileR"},
         {"WECK_LOGO",                      "Wecklogo"}
 };
 
@@ -282,6 +284,10 @@ void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
 }
 
 void print_info_column_header(FILE *fpout, char *col_name, char *col_value, Ctrl *idoc) {
+
+    if (strlen(col_value) == 0) // it is blank, but should be treated as "NO"
+        strcpy(col_value, "NO");
+
     print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
     fprintf(fpout, "%-30s", col_name);
     fprintf(fpout, "%-30s", col_value);
@@ -312,7 +318,8 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
         fprintf(fpout, "%-30s", col_value);
 
         if (equals_yes(col_value)) {
-            print_graphic_path(fpout, strcat(default_yes, ".tif"));
+            strncpy(cell_contents, default_yes, MED - 1);
+            print_graphic_path(fpout, cell_contents);
         } else if (equals_no(col_value)) {
             print_graphic_path(fpout, "blank-01.tif");
         } else {
@@ -568,7 +575,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     // SIZE record (optional)
     memcpy(graphic_val, labels[record].size, MED);
 
-    if ((cols->size) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
+    if ((cols->size) && (!equals_no(graphic_val))) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -591,15 +598,14 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** LEVEL record (optional) */
-    strncpy(graphic_val, labels[record].level, 1);
-    if ((cols->level) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
+
+    if ((cols->level) && (!equals_no(graphic_val))) {
         print_info_column_header(fpout, "LEVEL", labels[record].level, idoc);
 
     }
 
     /** QUANTITY record (optional) */
-    strncpy(graphic_val, labels[record].quantity, 1);
-    if ((cols->quantity) && (strlen(graphic_val) > 0) && (strncmpci(graphic_val, "N", 1) != 0)) {
+    if ((cols->quantity) && (!equals_no(graphic_val))) {
         print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
@@ -749,7 +755,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // singleuse record (optional)
     if (cols->singleuse && labels[record].singleuseonly)
-        print_graphic0x_record(fpout, &g_cnt, F_ "SINGLEUSE.tif", idoc);
+        print_graphic0x_record(fpout, &g_cnt, F_ "Singleuse.tif", idoc);
 
     // SINGLEPATIENTUSE record (optional)
     if (cols->singlepatientuse && labels[record].singlepatientuse)
@@ -829,99 +835,103 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // ADDRESS record (Optional: Y / N / value / blank)
     if (cols->address)
-        print_graphic_column_header(fpout, "ADDRESS", labels[record].address, "TFX3LineAdd13i.tif", idoc);
+        print_graphic_column_header(fpout, "ADDRESS", labels[record].address, "Nothing", idoc);
 
     // CAUTIONSTATE record (optional: N / value)
     if (cols->cautionstate)
-        print_graphic_column_header(fpout, "CAUTIONSTATE", labels[record].cautionstatement, "default", idoc);
+        print_graphic_column_header(fpout, "CAUTIONSTATE", labels[record].cautionstatement, "Nothing", idoc);
 
     // CE0120 record (optional)
     if (cols->ce0120)
-        print_graphic_column_header(fpout, "CE0120", labels[record].cemark, "default", idoc);
+        print_graphic_column_header(fpout, "CE0120", labels[record].cemark, "Nothing", idoc);
 
     // COOSTATE record (optional)
     if (cols->coostate)
-        print_graphic_column_header(fpout, "COOSTATE", labels[record].coostate, "default", idoc);
+        print_graphic_column_header(fpout, "COOSTATE", labels[record].coostate, "Nothing", idoc);
 
     // DISTRIBUTEDBY record (optional)
     if (cols->distby)
-        print_graphic_column_header(fpout, "DISTRIBUTEDBY", labels[record].distby, "default", idoc);
+        print_graphic_column_header(fpout, "DISTRIBUTEDBY", labels[record].distby, "Nothing", idoc);
 
     // ECREPADDRESS record (optional)
     if (cols->ecrepaddress)
-        print_graphic_column_header(fpout, "ECREPADDRESS", labels[record].ecrepaddress, "default", idoc);
+        print_graphic_column_header(fpout, "ECREPADDRESS", labels[record].ecrepaddress, "Nothing", idoc);
 
     // FLGRAPHIC record (optional)
     if (cols->flgraphic)
-        print_graphic_column_header(fpout, "FLGRAPHIC", labels[record].flgraphic, "default", idoc);
+        print_graphic_column_header(fpout, "FLGRAPHIC", labels[record].flgraphic, "Nothing", idoc);
 
     // LABELGRAPH1 record (optional)
     if (cols->labelgraph1)
-        print_graphic_column_header(fpout, "LABELGRAPH1", labels[record].labelgraph1, "default", idoc);
+        print_graphic_column_header(fpout, "LABELGRAPH1", labels[record].labelgraph1, "Nothing", idoc);
 
     // LABELGRAPH2 record (optional)
     if (cols->labelgraph2)
-        print_graphic_column_header(fpout, "LABELGRAPH2", labels[record].labelgraph2, "default", idoc);
+        print_graphic_column_header(fpout, "LABELGRAPH2", labels[record].labelgraph2, "Nothing", idoc);
 
     // LATEXSTATEMENT record (optional: N / value)
     if (cols->latexstate)
-        print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, "default", idoc);
+        print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, "Nothing", idoc);
 
     // LOGO1 record (optional)
     if (cols->logo1)
-        print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, "default", idoc);
+        print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, "Nothing", idoc);
 
     // LOGO2 record (optional)
     if (cols->logo2)
-        print_graphic_column_header(fpout, "LOGO2", labels[record].logo2, "default", idoc);
+        print_graphic_column_header(fpout, "LOGO2", labels[record].logo2, "Nothing", idoc);
 
     // LOGO3 record (optional)
     if (cols->logo3)
-        print_graphic_column_header(fpout, "LOGO3", labels[record].logo3, "default", idoc);
+        print_graphic_column_header(fpout, "LOGO3", labels[record].logo3, "Nothing", idoc);
 
     // LOGO4 record (optional)
     if (cols->logo4)
-        print_graphic_column_header(fpout, "LOGO4", labels[record].logo4, "default", idoc);
+        print_graphic_column_header(fpout, "LOGO4", labels[record].logo4, "Nothing", idoc);
 
     // LOGO5 record (optional)
     if (cols->logo5)
-        print_graphic_column_header(fpout, "LOGO5", labels[record].logo5, "default", idoc);
+        print_graphic_column_header(fpout, "LOGO5", labels[record].logo5, "Nothing", idoc);
 
     // MDR1 record (optional)
     if (cols->mdr1)
-        print_graphic_column_header(fpout, "MDR1", labels[record].mdr1, "default", idoc);
+        print_graphic_column_header(fpout, "MDR1", labels[record].mdr1, "Nothing", idoc);
 
     // MDR2 record (optional)
     if (cols->mdr2)
-        print_graphic_column_header(fpout, "MDR2", labels[record].mdr2, "default", idoc);
+        print_graphic_column_header(fpout, "MDR2", labels[record].mdr2, "Nothing", idoc);
 
     // MDR3 record (optional)
     if (cols->mdr3)
-        print_graphic_column_header(fpout, "MDR3", labels[record].mdr3, "default", idoc);
+        print_graphic_column_header(fpout, "MDR3", labels[record].mdr3, "Nothing", idoc);
 
     // MDR4 record (optional)
     if (cols->mdr4)
-        print_graphic_column_header(fpout, "MDR4", labels[record].mdr4, "default", idoc);
+        print_graphic_column_header(fpout, "MDR4", labels[record].mdr4, "Nothing", idoc);
 
     // MDR5 record (optional)
     if (cols->mdr5)
-        print_graphic_column_header(fpout, "MDR5", labels[record].mdr5, "default", idoc);
+        print_graphic_column_header(fpout, "MDR5", labels[record].mdr5, "Nothing", idoc);
 
     // MANUFACTUREDBY record (optional)
     if (cols->manufacturedby)
-        print_graphic_column_header(fpout, "MANUFACTUREDBY", labels[record].manufacturedby, "default", idoc);
+        print_graphic_column_header(fpout, "MANUFACTUREDBY", labels[record].manufacturedby, "Nothing", idoc);
 
     // PATENTSTA record (optional)
     if (cols->patentstatement)
-        print_graphic_column_header(fpout, "PATENTSTA", labels[record].patentstatement, "default", idoc);
+        print_graphic_column_header(fpout, "PATENTSTA", labels[record].patentstatement, "Nothing", idoc);
 
     // STERILESTA record (optional)
     if (cols->sterilitystatement)
-        print_graphic_column_header(fpout, "STERILESTA", labels[record].sterilitystatement, "default", idoc);
+        print_graphic_column_header(fpout, "STERILESTA", labels[record].sterilitystatement, "Nothing", idoc);
 
-    // STERILITYTYPE record (optional)
-    if (cols->sterilitytype)
-        print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "default", idoc);
+    // STERILITYTYPE record (this is ALWAYS printed. A missing column, or column containing "N" or "NO" will)
+    // translate to "blank-01.txt"
+    // if (cols->sterilitytype)
+//    if (strcmp(labels[record].sterilitytype, "" == 0) || equals_no(labels[record].sterilitytype))
+//        print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
+//    else
+    print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
 
     // BOMLEVEL record (optional)
     if (cols->bomlevel)
@@ -929,11 +939,11 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // VERSION record (optional)
     if (cols->version)
-        print_graphic_column_header(fpout, "VERSION", labels[record].version, "default", idoc);
+        print_graphic_column_header(fpout, "VERSION", labels[record].version, "Nothing", idoc);
 
     // INSERTGRAPHIC record (optional)
     if (cols->insertgraphic)
-        print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "LMAFASTRACH.tif", idoc);
+        print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "yes", idoc);
 
     if (non_SAP_fields) {
         // OLDLABEL record (optional)
@@ -1038,7 +1048,7 @@ int main(int argc, char *argv[]) {
     }
 
     // the labels array must be sorted by label number
-    sort_labels(labels);
+    //sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 
