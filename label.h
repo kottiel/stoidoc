@@ -49,13 +49,13 @@ typedef struct {
     char material[LRG];
     char coostate[LRG];
     char address[MED];
-    /* char barcode1[MED];*/
+    char barcode1[MED];
     char cautionstatement[MED];
     char cemark[MED];
-
     char distby[MED];
     char ecrepaddress[MED];
     char flgraphic[MED];
+    char gs1[MED];
     char insertgraphic[MED];
     char labelgraph1[MED];
     char labelgraph2[MED];
@@ -134,7 +134,7 @@ typedef struct {
 typedef struct {
     unsigned short address;
     unsigned short barcodetext;
-    /*unsigned short barcode1;*/
+    unsigned short barcode1;
     unsigned short bomlevel;
     unsigned short caution;
     unsigned short cautionstate;
@@ -149,6 +149,7 @@ typedef struct {
     unsigned short electroifu;
     unsigned short expdate;
     unsigned short flgraphic;
+    unsigned short gs1;
     unsigned short gtin;
     unsigned short insertgraphic;
     unsigned short ipn;

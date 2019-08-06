@@ -77,12 +77,17 @@ char lookup[][2][LRG] = {
         {"HEMO_L",                         "HemolokL"},
         {"HEMO_ML",                        "HemolokML"},
         {"HMOCLPTRD",                      "HmoclpTrd"},
+        {"LBL000125",                      "LBL000125FL"},
+        {"LBL000126",                      "LBL000126FL"},
+        {"LBL000307",                      "LBL000307FL"},
+        {"LBL000308",                      "LBL000308FL"},
         {"N",                              "blank-01"},
         {"NO",                             "blank-01"},
         {"NONSTERILE",                     "blank-01"},
         {"STERILEEO",                      "Sterile_EO"},
         {"STERILER",                       "SterileR"},
         {"WECK_LOGO",                      "Wecklogo"}
+
 };
 
 /** global variable to maintain size of the SAP lookup array             */
@@ -599,13 +604,13 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     /** LEVEL record (optional) */
 
-    if ((cols->level) && (!equals_no(graphic_val))) {
+    if ((cols->level) && (!equals_no(labels[record].level))) {
         print_info_column_header(fpout, "LEVEL", labels[record].level, idoc);
 
     }
 
     /** QUANTITY record (optional) */
-    if ((cols->quantity) && (!equals_no(graphic_val))) {
+    if ((cols->quantity) && (!equals_no(labels[record].level))) {
         print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
@@ -647,6 +652,78 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             printf("Nonnumeric GTIN \"%s\" in record %d. \n", labels[record].barcodetext, record);
         }
         print_info_column_header(fpout, "BARCODETEXT", labels[record].barcodetext, idoc);
+    }
+
+    /** BARCODE1 record (optional) */
+    gtin_digit[0] = '\0';
+    strncpy(gtin_digit, labels[record].barcodetext, 1);
+    if ((cols->barcode1) && (strlen(labels[record].barcode1) > 0)) {
+
+        char *endptr;
+        if (isNumeric(labels[record].barcode1)) {
+
+            // convert string to long long integer to verify GTIN length and check digit
+            long long gtin = strtoll(labels[record].barcode1, &endptr, 10);
+            int gtin_ctry_prefix;
+            int gtin_cpny_prefix;
+
+            // 14-digit GTIN - verify the checkDigit
+            if ((strlen(labels[record].barcode1) == GTIN_13 + 1)) {
+                if (gtin % 10 != checkDigit(&gtin)) {
+                    printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].barcode1, record);
+                }
+                gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+
+            } else if (strlen(labels[record].barcode1) == GTIN_13) {
+                gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+            } else {
+                printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].barcode1, record);
+            }
+
+            // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
+            // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
+            if ((gtin_ctry_prefix > 4) || (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
+                printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
+        }
+        print_info_column_header(fpout, "BARCODE1", labels[record].barcode1, idoc);
+    }
+
+    /** GS1 record (optional) */
+    gtin_digit[0] = '\0';
+    strncpy(gtin_digit, labels[record].gs1, 1);
+    if ((cols->gs1) && (strlen(labels[record].gs1) > 0)) {
+
+        char *endptr;
+        if (isNumeric(labels[record].gs1)) {
+
+            // convert string to long long integer to verify GTIN length and check digit
+            long long gtin = strtoll(labels[record].gs1, &endptr, 10);
+            int gtin_ctry_prefix;
+            int gtin_cpny_prefix;
+
+            // 14-digit GTIN - verify the checkDigit
+            if ((strlen(labels[record].gs1) == GTIN_13 + 1)) {
+                if (gtin % 10 != checkDigit(&gtin)) {
+                    printf("Invalid GTIN check digit \"%s\" in record %d.\n", labels[record].gs1, record);
+                }
+                gtin_ctry_prefix = (int) (gtin / GTIN_14_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_14_DIGIT)) / GTIN_14_CPNY_DIVISOR);
+
+            } else if (strlen(labels[record].gs1) == GTIN_13) {
+                gtin_ctry_prefix = (int) (gtin / GTIN_13_DIGIT);
+                gtin_cpny_prefix = (int) ((gtin - (gtin_ctry_prefix * GTIN_13_DIGIT)) / GTIN_13_CPNY_DIVISOR);
+            } else {
+                printf("Invalid GTIN check digit or length \"%s\" in record %d.\n", labels[record].gs1, record);
+            }
+
+            // verify GTIN prefixes if it's nonzero (otherwise it's just a placeholder)
+            // verify the GTIN prefixes (country: 0, 1, 2, 3, company: 4026704 or 5060112)
+            if ((gtin_ctry_prefix > 4) || (gtin != 0) && (gtin_cpny_prefix != 4026704 && gtin_cpny_prefix != 5060112))
+                printf("Invalid GTIN prefix \"%d\" in record %d.\n", gtin_cpny_prefix, record);
+        }
+        print_info_column_header(fpout, "GS1", labels[record].gs1, idoc);
     }
 
     /** GTIN record (optional) - this is a non-SAP field that prints only if [-n] flag is present at runtime */
@@ -1048,7 +1125,7 @@ int main(int argc, char *argv[]) {
     }
 
     // the labels array must be sorted by label number
-    //sort_labels(labels);
+    sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
 

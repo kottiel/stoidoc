@@ -278,6 +278,22 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     cols->barcodetext = count;
             }
 
+        } else if (strcmp(token, "BARCODE1") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].barcode1, contents, sizeof(labels[i].barcode1));
+                if (!(equals_no(contents)))
+                    cols->barcode1 = count;
+            }
+
+        } else if (strcmp(token, "GS1") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].gs1, contents, sizeof(labels[i].gs1));
+                if (!(equals_no(contents)))
+                    cols->gs1 = count;
+            }
+
         } else if (strcmp(token, "GTIN") == 0) {
             if (non_SAP_fields) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
@@ -370,7 +386,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     cols->distby = count;
             }
         } else if ((strcmp(token, "DONOTUSEDAM") == 0) ||
-                   (strcmp(token, "DONOTPAKDAM") == 0)) {
+                (strcmp(token, "DONOTPAKDAM") == 0)) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strcmp("Y", contents) == 0) {
@@ -845,7 +861,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     cols->sterilitystatement = count;
             }
         } else if ((strcmp(token, "TEMPLATENUMBER") == 0) ||
-                   (strcmp(token, "TEMPLATE") == 0)) {
+                (strcmp(token, "TEMPLATE") == 0)) {
             cols->templatenumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
