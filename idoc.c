@@ -12,6 +12,7 @@
 
 #include "label.h"
 #include "strl.h"
+#include "lookup.h"
 
 /* end of line new line character                                        */
 #define LF '\n'
@@ -64,34 +65,6 @@ int spreadsheet_row_number = 0;
 int sequence_number = 1;
 
 char prev_material[MED] = {0};
-
-/** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
-char lookup[][2][LRG] = {
-        {"CE",                             "CE Mark"},
-        {"CE0050",                         "CE0050"},
-        {"CE0120",                         "CE_0120_Below"},
-        {"CE0123",                         "CE123"},
-        {"COOPRODUSWUSANDFOREIGNPACKMEX2", "COOProdUSwUSandFrnPackMex2"},
-        {"COOPRODUSWUSANDFOREIGNPACKUS",   "COOProdUSwUSandForeignPkUS"},
-        {"HEMO_AUTO_L",                    "HemoAutoL"},
-        {"HEMO_L",                         "HemolokL"},
-        {"HEMO_ML",                        "HemolokML"},
-        {"HMOCLPTRD",                      "HmoclpTrd"},
-        {"LBL000125",                      "LBL000125FL"},
-        {"LBL000126",                      "LBL000126FL"},
-        {"LBL000307",                      "LBL000307FL"},
-        {"LBL000308",                      "LBL000308FL"},
-        {"N",                              "blank-01"},
-        {"NO",                             "blank-01"},
-        {"NONSTERILE",                     "blank-01"},
-        {"STERILEEO",                      "Sterile_EO"},
-        {"STERILER",                       "SterileR"},
-        {"WECK_LOGO",                      "Wecklogo"}
-
-};
-
-/** global variable to maintain size of the SAP lookup array             */
-int lookupsize = sizeof(lookup) / sizeof(lookup[0]);
 
 /** a global struct variable of IDoc sequence numbers                    */
 struct control_numbers {
@@ -1130,6 +1103,9 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
 int main(int argc, char *argv[]) {
 
+    // elapsed time
+    clock_t start = clock();
+
     // the Column_header struct that contains all spreadsheet col labels
     Column_header columns = {0};
 
@@ -1236,6 +1212,10 @@ int main(int argc, char *argv[]) {
             free(labels[i].tdline);
 
     free(labels);
+
+    clock_t stop = clock();
+    double elapsed = (double) (stop - start) / CLOCKS_PER_SEC;
+    printf("\nTime elapsed: %.5f\n", elapsed);
 
     return EXIT_SUCCESS;
 }
