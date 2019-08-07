@@ -75,7 +75,7 @@ typedef struct {
     char size[MED];
     char sterilitystatement[MED];
     char sterilitytype[MED];
-    char temperaturerange[MED];
+    char temprange[MED];
     char version[MED];
     char oldlabel[MED];
     char oldtemplate[MED];
@@ -204,6 +204,7 @@ typedef struct {
     unsigned short sizelogo;
     unsigned short sterilitystatement;
     unsigned short sterilitytype;
+    unsigned short temprange;
     unsigned short tdline;
     unsigned short templatenumber;
     unsigned short tfxlogo;

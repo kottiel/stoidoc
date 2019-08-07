@@ -361,6 +361,18 @@ void print_blank_graphic_column_header(FILE *fpout, char *col_name, char *col_va
     fprintf(fpout, "\n");
 }
 
+void print_info_lookup_column_header(FILE *fpout, char *col_name, char *col_value, char *lookup, Ctrl *idoc) {
+
+    char cell_contents[MED];
+    strncpy(cell_contents, col_value, MED - 1);
+
+    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+    fprintf(fpout, "%-30s", col_name);
+    fprintf(fpout, "%-30s", col_value);
+    fprintf(fpout, "%-255s", lookup);
+    fprintf(fpout, "\n");
+}
+
 /**
     print a passed column-field that is in the special GRAPHICS01 - GRAPHICS14 category and is defined as
     boolean in the Label_record. It contains a "Y" or a "N." If "Y," print the hard-coded value associated with
@@ -645,12 +657,20 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     /** LEVEL record (optional) */
 
     if ((cols->level) && (!equals_no(labels[record].level))) {
-        print_info_column_header(fpout, "LEVEL", labels[record].level, idoc);
+
+        // level name will be checked against its SAP lookup value.
+        // if it's not in there, it'll be reported as such. Otherwise, the  (but will not be changed).
+        char *gnp = sap_lookup(labels[record].level);
+        if (gnp == NULL)
+            printf("Level value \"%s\" in record %d is not a standard LEVEL value. Please check it.\n",
+                   labels[record].level, record);
+
+        print_info_lookup_column_header(fpout, "LEVEL", labels[record].level, gnp, idoc);
 
     }
 
     /** QUANTITY record (optional) */
-    if ((cols->quantity) && (!equals_no(labels[record].level))) {
+    if ((cols->quantity) && (!equals_no(labels[record].quantity))) {
         print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
@@ -1054,6 +1074,10 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 //        print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
 //    else
     print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
+
+    // TEMPRANGE record (optional)
+    if (cols->temprange)
+        print_graphic_column_header(fpout, "TEMPRANGE", labels[record].temprange, "Nothing", idoc);
 
     // BOMLEVEL record (optional)
     if (cols->bomlevel)

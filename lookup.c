@@ -7,6 +7,7 @@
 
 /** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
+
         {"220000959",                      "220000959FL"},
         {"220000960",                      "220000960FL"},
         {"220001611",                      "220001611FL"},
@@ -62,16 +63,29 @@ char lookup[][2][LRG] = {
         {"220002842",                      "220002842FL"},
         {"220002843",                      "220002843FL"},
         {"220002861",                      "220002861FL"},
+        {"Box Label",                      "Box Label"},
+        {"BOXLABEL",                       "Box Label"},
+        {"CARTON",                         "Carton Label"},
+        {"Carton Label",                   "Carton Label"},
+        {"CARTONLABEL",                    "Carton Label"},
+        {"CASE",                           "Case Label"},
+        {"Case Label",                     "Case Label"},
         {"CE",                             "CE Mark"},
         {"CE0050",                         "CE0050"},
         {"CE0120",                         "CE_0120_Below"},
         {"CE0123",                         "CE123"},
         {"COOPRODUSWUSANDFOREIGNPACKMEX2", "COOProdUSwUSandFrnPackMex2"},
         {"COOPRODUSWUSANDFOREIGNPACKUS",   "COOProdUSwUSandForeignPkUS"},
+        {"EA",                             "Each Unit"},
+        {"EACH",                           "Each Unit"},
+        {"Each Unit",                      "Each Unit"},
+        {"EAUNIT",                         "Each Unit"},
         {"HEMO_AUTO_L",                    "HemoAutoL"},
         {"HEMO_L",                         "HemolokL"},
         {"HEMO_ML",                        "HemolokML"},
         {"HMOCLPTRD",                      "HmoclpTrd"},
+        {"INS",                            "Insert"},
+        {"Insert",                         "Insert"},
         {"LBL000021",                      "LBL000021FL"},
         {"LBL000045",                      "LBL000045FL"},
         {"LBL000124",                      "LBL000124FL"},
@@ -98,11 +112,22 @@ char lookup[][2][LRG] = {
         {"LBL007726FL",                    "LBL007726FL"},
         {"LBL020443FL",                    "LBL020443FL"},
         {"N",                              "blank-01"},
+        {"N/A",                            "N/A"},
         {"NO",                             "blank-01"},
         {"NONSTERILE",                     "blank-01"},
+        {"POUCH",                          "Pouch Label"},
+        {"Pouch Label",                    "Pouch Label"},
+        {"Product Label",                  "Product Label"},
+        {"PRODUCTLABEL",                   "Product Label"},
+        {"Sales Unit",                     "Sales Unit"},
+        {"SALESUNIT",                      "Sales Unit"},
+        {"Shipper",                        "Shipper"},
+        {"SHP",                            "Shipper"},
         {"STERILEEO",                      "Sterile_EO"},
         {"STERILER",                       "SterileR"},
+        {"SU",                             "Sales Unit"},
         {"WECK_LOGO",                      "Wecklogo"}
+
 };
 
 /** global variable to maintain size of the SAP lookup array             */

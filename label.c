@@ -158,6 +158,14 @@ int get_field_contents_from_row(char *contents, int i, int count, char tab_str) 
     int length = stop - start;
     strncpy(contents, spreadsheet[i] + start, (size_t) length);
     contents[length] = '\0';
+
+    // check if there's an .tif extension and remove it if so
+    if ((length > 4) && ((contents[length - 4]) == '.')) {
+        char *suffix = contents + length - 3;
+        if (strcmp(suffix, "tif") == 0)
+            contents[length - 4] = '\0';
+    }
+
     if (equals_no(contents))
         return 0;
     else
@@ -318,7 +326,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents)) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].caution = true;
                         cols->caution = count;
                     } else
@@ -345,7 +353,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "CONSULTIFU") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].consultifu = true;
                     cols->consultifu = count;
                 } else
@@ -354,7 +362,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "CONTAINSLATEX") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].latex = true;
                     cols->latex = count;
                 } else
@@ -389,7 +397,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 (strcmp(token, "DONOTPAKDAM") == 0)) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].donotusedamaged = true;
                     cols->donotusedam = count;
                 } else
@@ -400,7 +408,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents) > 0) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].ecrep = true;
                         cols->ecrep = count;
                     } else
@@ -419,7 +427,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "ELECTROSURIFU") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].electroifu = true;
                     cols->electroifu = count;
                 } else
@@ -430,7 +438,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents) > 0) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].expdate = true;
                         cols->expdate = count;
                     } else
@@ -451,7 +459,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents)) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].keepawayheat = true;
                         cols->keepawayheat = count;
                     } else
@@ -469,7 +477,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "KEEPDRY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].keepdry = true;
                     cols->keepdry = count;
                 } else
@@ -492,7 +500,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "LATEXFREE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].latexfree = true;
                     cols->latexfree = count;
                 } else
@@ -586,7 +594,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "LOTGRAPHIC") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].lotgraphic = true;
                     cols->lotgraphic = count;
                 } else
@@ -626,7 +634,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "MANUFACTURER") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].manufacturer = true;
                     cols->manufacturer = count;
                 } else
@@ -645,7 +653,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "NORESTERILE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].noresterilize = true;
                     cols->noresterile = count;
                 } else
@@ -654,7 +662,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "NONSTERILE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].nonsterile = true;
                     cols->nonsterile = count;
                 } else
@@ -724,7 +732,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "PHTBBP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].phtbbp = true;
                     cols->phtbbp = count;
                 } else
@@ -733,7 +741,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "PHTDINP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].phtdinp = true;
                     cols->phtdinp = count;
                 } else
@@ -742,7 +750,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "PVCFREE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].pvcfree = true;
                     cols->pvcfree = count;
                 } else
@@ -758,7 +766,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "REF") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].ref = true;
                     cols->ref = count;
                 } else
@@ -768,7 +776,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents)) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].refnumber = true;
                         cols->refnumber = count;
                     } else
@@ -778,7 +786,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "REUSABLE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].reusable = true;
                     cols->reusable = count;
                 } else
@@ -804,7 +812,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "SINGLEUSE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].singleuseonly = true;
                     cols->singleuse = count;
                 } else
@@ -814,7 +822,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (strlen(contents)) {
-                    if (strcmp("Y", contents) == 0) {
+                    if (equals_yes(contents)) {
                         labels[i].serial = true;
                         cols->serial = count;
                     } else
@@ -824,7 +832,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "SINGLEPATIENTUSE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].singlepatientuse = true;
                     cols->singlepatientuse = count;
                 } else
@@ -840,7 +848,7 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "SIZELOGO") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strcmp("Y", contents) == 0) {
+                if (equals_yes(contents)) {
                     labels[i].sizelogo = true;
                     cols->sizelogo = count;
                 } else
@@ -860,8 +868,15 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 if (strlen(contents) && (!(equals_no(contents))))
                     cols->sterilitystatement = count;
             }
+        } else if (strcmp(token, "TEMPRANGE") == 0) {
+            for (int i = 1; i < spreadsheet_row_number; i++) {
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].temprange, contents, sizeof(labels[i].temprange));
+                if (strlen(contents) && (!(equals_no(contents))))
+                    cols->temprange = count;
+            }
         } else if ((strcmp(token, "TEMPLATENUMBER") == 0) ||
-                (strcmp(token, "TEMPLATE") == 0)) {
+                   (strcmp(token, "TEMPLATE") == 0)) {
             cols->templatenumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
