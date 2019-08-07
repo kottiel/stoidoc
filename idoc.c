@@ -656,7 +656,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     /** LEVEL record (optional) */
 
-    if ((cols->level) && (!equals_no(labels[record].level))) {
+    if ((cols->level) && (strlen(labels[record].level) > 0) && (!equals_no(labels[record].level))) {
 
         // level name will be checked against its SAP lookup value.
         // if it's not in there, it'll be reported as such. Otherwise, the  (but will not be changed).
