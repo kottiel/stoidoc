@@ -632,7 +632,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     // SIZE record (optional)
     memcpy(graphic_val, labels[record].size, MED);
 
-    if ((cols->size) && (!equals_no(graphic_val))) {
+    if ((cols->size) && (strlen(labels[record].size) > 0) && (!equals_no(graphic_val))) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -650,8 +650,14 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             diff = (int) (a - token);
             memmove(token + diff, token + diff + 1, strlen(token) - 1);
         }
-        print_info_column_header(fpout, "SIZE", labels[record].size, idoc);
 
+        // size name will be checked against its SAP lookup value.
+        // just in case there's a matching entry...
+        char *gnp = sap_lookup(labels[record].size);
+        if (gnp != NULL)
+            print_info_lookup_column_header(fpout, "SIZE", labels[record].size, gnp, idoc);
+        else
+            print_info_column_header(fpout, "SIZE", labels[record].size, idoc);
     }
 
     /** LEVEL record (optional) */
@@ -774,6 +780,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     //
     // GRAPHIC01 - GRAPHIC14 Fields (optional)
+    // If the cell value is "Y" or "YES', a corresponding record is printed.
     //
 
     int g_cnt = 1;

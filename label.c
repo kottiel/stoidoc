@@ -325,13 +325,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
         } else if (strcmp(token, "CAUTION") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents)) {
-                    if (equals_yes(contents)) {
-                        labels[i].caution = true;
-                        cols->caution = count;
-                    } else
-                        labels[i].caution = false;
-                }
+                if (equals_yes(contents)) {
+                    labels[i].caution = true;
+                    cols->caution = count;
+                } else
+                    labels[i].caution = false;
             }
 /******************************************************************************/
         } else if (strcmp(token, "CAUTIONSTATE") == 0) {
@@ -641,12 +639,11 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                     labels[i].manufacturer = false;
             }
         } else if (strcmp(token, "MFGDATE") == 0) {
-            cols->mfgdate = 0;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
                     labels[i].mfgdate = true;
-                    cols->mfgdate = count;
+                    //cols->mfgdate = count;
                 } else
                     labels[i].mfgdate = false;
             }
