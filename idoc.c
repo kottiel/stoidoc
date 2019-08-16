@@ -21,8 +21,8 @@
 //#define F_ "F_"
 #define F_ ""
 
-/* length of '_idoc (stoidoc)->txt' extension                            */
-#define FILE_EXT_LEN   20
+/* length of '_idoc (stoidoc 2.0)->txt' extension                        */
+#define FILE_EXT_LEN   36
 
 /* length of GTIN-13                                                     */
 #define GTIN_13        13
@@ -283,14 +283,16 @@ void print_Z2BTLC01000(FILE *fpout, char *ctrl_num, int char_seq_number) {
 
 void print_info_column_header(FILE *fpout, char *col_name, char *col_value, Ctrl *idoc) {
 
-    if (strlen(col_value) == 0) // it is blank, but should be treated as "NO"
-        strcpy(col_value, "NO");
+    if (strlen(col_value) > 0) {
+        if (equals_no(col_value) > 0) // it is blank, but should be treated as "NO"
+            strcpy(col_value, "NO");
 
-    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-    fprintf(fpout, "%-30s", col_name);
-    fprintf(fpout, "%-30s", col_value);
-    fprintf(fpout, "%-255s", col_value);
-    fprintf(fpout, "\n");
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", col_name);
+        fprintf(fpout, "%-30s", col_value);
+        fprintf(fpout, "%-255s", col_value);
+        fprintf(fpout, "\n");
+    }
 }
 
 /**
@@ -309,7 +311,7 @@ void print_graphic_column_header(FILE *fpout, char *col_name, char *col_value, c
     strncpy(cell_contents, col_value, MED - 1);
 
     // only print a record if the cell_contents contains a value
-    if (strnlen(cell_contents, MED) > 0) {
+    if (strlen(cell_contents) > 0) {
 
         print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
         fprintf(fpout, "%-30s", col_name);
@@ -383,18 +385,19 @@ void print_info_lookup_column_header(FILE *fpout, char *col_name, char *col_valu
     @param graphic_name is the graphic to print if the boolean is true
     @param idoc is the struct that tracks the control numbers
  */
-void print_graphic0x_record(FILE *fpout, int *g_cnt, char *graphic_name, Ctrl *idoc) {
+void print_graphic0x_record(FILE *fpout, int *g_cnt, char *graphic_name, unsigned int value, Ctrl *idoc) {
 
-    char g_cnt_str[03];
-    char graphic[10] = "GRAPHIC0";
-    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-    sprintf(g_cnt_str, "%d", (*g_cnt)++);
-    fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
-    fprintf(fpout, "%-30s", "Y");
-    print_graphic_path(fpout, graphic_name);
-    fprintf(fpout, "\n");
+    if (value == 2) {
+        char g_cnt_str[03];
+        char graphic[10] = "GRAPHIC0";
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        sprintf(g_cnt_str, "%d", (*g_cnt)++);
+        fprintf(fpout, "%-30s", strcat(graphic, g_cnt_str));
+        fprintf(fpout, "%-30s", "Y");
+        print_graphic_path(fpout, graphic_name);
+        fprintf(fpout, "\n");
+    }
 }
-
 
 /**
     print a passed column-field that is defined as boolean in the Label_record. It contains a "Y" or a "N."
@@ -406,19 +409,21 @@ void print_graphic0x_record(FILE *fpout, int *g_cnt, char *graphic_name, Ctrl *i
     @param graphic_name is the graphic to print if the boolean is true
     @param idoc is the struct that tracks the control numbers
  */
-void print_boolean_record(FILE *fpout, char *col_name, bool value, char *graphic_name, Ctrl *idoc) {
-
-    print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
-    fprintf(fpout, "%-30s", col_name);
-
+void print_boolean_record(FILE *fpout, char *col_name, int value, char *graphic_name, Ctrl *idoc) {
     if (value) {
-        fprintf(fpout, "%-30s", "Y");
-        print_graphic_path(fpout, graphic_name);
-    } else {
-        fprintf(fpout, "%-30s", "N");
-        print_graphic_path(fpout, "blank-01.tif");
+        print_Z2BTLC01000(fpout, idoc->ctrl_num, idoc->char_seq_number);
+        fprintf(fpout, "%-30s", col_name);
+
+        if (value == 2) {
+            fprintf(fpout, "%-30s", "Y");
+            print_graphic_path(fpout, graphic_name);
+
+        } else {
+            fprintf(fpout, "%-30s", "N");
+            print_graphic_path(fpout, "blank-01.tif");
+        }
+        fprintf(fpout, "\n");
     }
-    fprintf(fpout, "\n");
 }
 
 /**
@@ -488,7 +493,7 @@ int print_control_record(FILE *fpout, Ctrl *idoc) {
     @param idoc is a Ctrl structure containing sequence numbers
     @return true if a label_idoc_record was printed successfully
 */
-int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *cols, int record, Ctrl *idoc) {
+int print_label_idoc_records(FILE *fpout, Label_record *labels, int record, Ctrl *idoc) {
 
     // Print the records for a given IDOC (labels[record])
 
@@ -498,7 +503,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // MATERIAL record (optional)
     // (this is skipped if the previous material record is the same)
-    if ((cols->material) && (strlen(labels[record].material) > 0)) {
+    if ((strlen(labels[record].material) > 0)) {
 
         // check whether it's a new material
         if (strcmp(prev_material, labels[record].material) != 0) {
@@ -548,11 +553,9 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     // TDLINE record(s) (optional) - repeat as many times as there are "##"
 
-    if (cols->tdline)
-        memcpy(graphic_val, labels[record].tdline, 4);
+    memcpy(graphic_val, labels[record].tdline, 4);
 
-    if ((cols->tdline) &&
-        (strlen(graphic_val) > 0) &&
+    if ((strlen(graphic_val) > 0) &&
         (strcasecmp(graphic_val, "n/a") != 0) &&
         (strcasecmp(graphic_val, "N") != 0)) {
 
@@ -611,7 +614,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     // TEMPLATENUMBER record (required)
-    if (cols->templatenumber) {
+    if (labels[record].template) {
         print_info_column_header(fpout, "TEMPLATENUMBER", labels[record].template, idoc);
     } else {
         printf("Missing template number in record %d. Aborting.\n", record);
@@ -619,8 +622,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     // REVISION record (optional)
-    if ((cols->revision) && (strlen(labels[record].revision) > 0)) {
-
+    if (labels[record].revision) {
         int rev = 0;
         if ((sscanf(labels[record].revision, "R%d", &rev) == 1) && rev >= 0 && rev <= 99) {
             print_info_column_header(fpout, "REVISION", labels[record].revision, idoc);
@@ -632,7 +634,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     // SIZE record (optional)
     memcpy(graphic_val, labels[record].size, MED);
 
-    if ((cols->size) && (strlen(labels[record].size) > 0) && (!equals_no(graphic_val))) {
+    if ((strlen(labels[record].size) > 0) && (!equals_no(graphic_val))) {
         char *token = labels[record].size;
 
         //check for and remove any leading...
@@ -662,7 +664,7 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
 
     /** LEVEL record (optional) */
 
-    if ((cols->level) && (strlen(labels[record].level) > 0) && (!equals_no(labels[record].level))) {
+    if ((strlen(labels[record].level) > 0) && (!equals_no(labels[record].level))) {
 
         // level name will be checked against its SAP lookup value.
         // if it's not in there, it'll be reported as such. Otherwise, the  (but will not be changed).
@@ -676,16 +678,14 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** QUANTITY record (optional) */
-    if ((cols->quantity) && (!equals_no(labels[record].quantity))) {
+    if ((labels[record].quantity) && (!equals_no(labels[record].quantity))) {
         print_info_column_header(fpout, "QUANTITY", labels[record].quantity, idoc);
     }
 
     /** BARCODETEXT record (optional) */
-    char gtin_digit[2] = {0};
-    strncpy(gtin_digit, labels[record].barcodetext, 1);
-    if ((cols->barcodetext) && (strlen(labels[record].barcodetext) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+    char *endptr;
+    if ((strlen(labels[record].barcodetext) > 0) && (!equals_no(labels[record].barcodetext))) {
 
-        char *endptr;
         if (isNumeric(labels[record].barcodetext)) {
 
             // convert string to long long integer to verify GTIN length and check digit
@@ -721,14 +721,13 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** GTIN record (optional) - this is a non-SAP field that prints only if [-n] flag is present at runtime */
-    if (cols->gtin) {
+    if (labels[record].gtin) {
         if (non_SAP_fields) {
             char gtin_digit1[2] = {0};
             strncpy(gtin_digit1, labels[record].gtin, 1);
 
-            if ((strlen(labels[record].gtin) > 0) && (strncmpci(gtin_digit, "N", 1) != 0)) {
+            if ((strlen(labels[record].gtin) > 0) && (!equals_no(labels[record].gtin))) {
 
-                char *endptr;
                 if (isNumeric(labels[record].gtin)) {
 
                     // convert string to long long integer to verify GTIN length and check digit
@@ -767,90 +766,42 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
         }
     }
     // LTNUMBER record (optional)
-    if ((cols->ltnumber) && (strlen(labels[record].ltnumber) > 0)) {
+    if (labels[record].ltnumber) {
         print_info_column_header(fpout, "LTNUMBER", labels[record].ltnumber, idoc);
     }
 
     // IPN record (optional) - - this is a non-SAP field that prints only if [-n] flag is present at runtime */
     if (non_SAP_fields)
-        if ((cols->ipn) && (strlen(labels[record].ipn) > 0)) {
+        if (labels[record].ipn) {
             print_info_column_header(fpout, "IPN", labels[record].ipn, idoc);
         }
-
 
     //
     // GRAPHIC01 - GRAPHIC14 Fields (optional)
     // If the cell value is "Y" or "YES', a corresponding record is printed.
     //
-
     int g_cnt = 1;
-
-    // CAUTION record (optional)
-    if (cols->caution && labels[record].caution)
-        print_graphic0x_record(fpout, &g_cnt, F_ "Caution.tif", idoc);
-
-    // ConsultIFU record (optional)
-    if (cols->consultifu && labels[record].consultifu)
-        print_graphic0x_record(fpout, &g_cnt, F_ "ConsultIFU.tif", idoc);
-
-    // Containslatex record (optional)
-    if (cols->latex && labels[record].latex)
-        print_graphic0x_record(fpout, &g_cnt, F_ "Latex.tif", idoc);
-
-    // DoNotUsePakDam record (optional)
-    if (cols->donotusedam && labels[record].donotusedamaged)
-        print_graphic0x_record(fpout, &g_cnt, F_ "DoNotUsePakDam.tif", idoc);
-
-    // Latex free record (optional)
-    if (cols->latexfree && labels[record].latexfree)
-        print_graphic0x_record(fpout, &g_cnt, F_ "Latex Free.tif", idoc);
-
-    // Man in box record (optional)
-    if (cols->maninbox && labels[record].maninbox)
-        print_graphic0x_record(fpout, &g_cnt, F_ "ManInBox.tif", idoc);
-
-    // DoNotRe-sterilize record (optional)
-    if (cols->noresterile && labels[record].noresterilize)
-        print_graphic0x_record(fpout, &g_cnt, F_ "DoNotRe-sterilize.tif", idoc);
-
-    // Non-sterile record (optional)
-    if (cols->nonsterile && labels[record].nonsterile)
-        print_graphic0x_record(fpout, &g_cnt, F_ "Non-sterile.tif", idoc);
-
-    // PVC Free record (optional)
-    if (cols->pvcfree && labels[record].pvcfree)
-        print_graphic0x_record(fpout, &g_cnt, F_ "PVC_Free.tif", idoc);
-
-    // RESUSABLE record (optional)
-    if (cols->reusable && labels[record].reusable)
-        print_graphic0x_record(fpout, &g_cnt, F_ "REUSABLE.tif", idoc);
-
-    // singleuse record (optional)
-    if (cols->singleuse && labels[record].singleuseonly)
-        print_graphic0x_record(fpout, &g_cnt, F_ "Singleuse.tif", idoc);
-
-    // SINGLEPATIENTUSE record (optional)
-    if (cols->singlepatientuse && labels[record].singlepatientuse)
-        print_graphic0x_record(fpout, &g_cnt, F_ "SINGLEPATIENUSE.tif", idoc);
-
-    // electrosurgicalifu record (optional)
-    if (cols->electroifu && labels[record].electroifu)
-        print_graphic0x_record(fpout, &g_cnt, F_ "ElectroSurIFU.tif", idoc);
-
-    // keepdry record (optional)
-    if (cols->keepdry && labels[record].keepdry)
-        print_graphic0x_record(fpout, &g_cnt, F_ "KeepDry.tif", idoc);
-
+    print_graphic0x_record(fpout, &g_cnt, F_ "Caution.tif", labels[record].caution, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "ConsultIFU.tif", labels[record].consultifu, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "Latex.tif", labels[record].latex, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "DoNotUsePakDam.tif", labels[record].donotusedamaged, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "Latex Free.tif", labels[record].latexfree, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "ManInBox.tif", labels[record].maninbox, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "DoNotRe-sterilize.tif", labels[record].noresterilize, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "Non-sterile.tif", labels[record].nonsterile, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "PVC_Free.tif", labels[record].pvcfree, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "REUSABLE.tif", labels[record].reusable, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "Singleuse.tif", labels[record].singleuseonly, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "SINGLEPATIENUSE.tif", labels[record].singlepatientuse, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "ElectroSurIFU.tif", labels[record].electroifu, idoc);
+    print_graphic0x_record(fpout, &g_cnt, F_ "KeepDry.tif", labels[record].keepdry, idoc);
     //
     // END of GRAPHIC01 - GRAPHIC14 Fields (optional)
     //
 
     /** BARCODE1 record (optional) */
-    gtin_digit[0] = '\0';
-    strncpy(gtin_digit, labels[record].barcodetext, 1);
-    if ((cols->barcode1) && (strlen(labels[record].barcode1) > 0)) {
+    if ((labels[record].barcode1) && (!equals_no(labels[record].barcode1))) {
 
-        char *endptr;
         if (isNumeric(labels[record].barcode1)) {
 
             // convert string to long long integer to verify GTIN length and check digit
@@ -882,9 +833,8 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
     }
 
     /** GS1 record (optional) */
-    gtin_digit[0] = '\0';
-    strncpy(gtin_digit, labels[record].gs1, 1);
-    if ((cols->gs1) && (strlen(labels[record].gs1) > 0)) {
+
+    if ((labels[record].gs1) && (!equals_no(labels[record].gs1))) {
 
         char *endptr;
         if (isNumeric(labels[record].gs1)) {
@@ -922,212 +872,74 @@ int print_label_idoc_records(FILE *fpout, Label_record *labels, Column_header *c
             print_graphic_column_header(fpout, "GS1", labels[record].gs1, "GS1", idoc);
     }
 
-    /** ECREP record (optional: N / value) */
-    if (cols->ecrep)
-        print_boolean_record(fpout, "ECREP", labels[record].ecrep, F_ "EC Rep.tif", idoc);
+    print_boolean_record(fpout, "ECREP", labels[record].ecrep, F_ "EC Rep.tif", idoc);
+    print_boolean_record(fpout, "EXPDATE", labels[record].expdate, F_ "Expiration Date.tif", idoc);
+    print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, F_ "KeepAwayHeat.tif", idoc);
+    print_boolean_record(fpout, "LOTGRAPHIC", labels[record].lotgraphic, F_ "Lot.tif", idoc);
+    print_boolean_record(fpout, "MANUFACTURER", labels[record].manufacturer, F_ "Manufacturer.tif", idoc);
+    print_boolean_record(fpout, "MFGDATE", labels[record].mfgdate, F_ "DateofManufacture.tif", idoc);
+    print_boolean_record(fpout, "PHTDEHP", labels[record].phtdehp, "PHT-DEHP.tif", idoc);
+    print_boolean_record(fpout, "PHTBBP", labels[record].phtbbp, F_ "PHT-BBP.tif", idoc);
+    print_boolean_record(fpout, "PHTDINP", labels[record].phtdinp, F_ "PHT-DINP.tif", idoc);
+    print_boolean_record(fpout, "REFNUMBER", labels[record].refnumber, F_ "REF.tif", idoc);
+    print_boolean_record(fpout, "REF", labels[record].ref, F_ "REF.tif", idoc);
+    print_boolean_record(fpout, "RXONLY", labels[record].rxonly, F_ "RX Only.tif", idoc);
+    print_boolean_record(fpout, "SERIAL", labels[record].serial, F_ "Serial Number.tif", idoc);
+    print_boolean_record(fpout, "TFXLOGO", labels[record].tfxlogo, F_ "TeleflexMedical.tif", idoc);
 
-    /** EXPDATE record (optional) */
-    if (cols->expdate)
-        print_boolean_record(fpout, "EXPDATE", labels[record].expdate, F_ "Expiration Date.tif", idoc);
+    print_boolean_column_header(fpout, "SIZELOGO", labels[record].sizelogo, idoc);
 
-    // KEEPAWAYHEAT record (optional)
-    if (cols->keepawayheat)
-        print_boolean_record(fpout, "KEEPAWAYHEAT", labels[record].keepawayheat, F_ "KeepAwayHeat.tif", idoc);
-
-    // LOTGRAPHIC record (optional)
-    if (cols->lotgraphic)
-        print_boolean_record(fpout, "LOTGRAPHIC", labels[record].lotgraphic, F_ "Lot.tif", idoc);
-
-    // MANUFACTURER record (optional)
-    if (cols->manufacturer)
-        print_boolean_record(fpout, "MANUFACTURER", labels[record].manufacturer, F_ "Manufacturer.tif", idoc);
-
-    // MFGDATE record (optional)
-    if (cols->mfgdate)
-        print_boolean_record(fpout, "MFGDATE", labels[record].mfgdate, F_ "DateofManufacture.tif", idoc);
-
-    // PHTDEHP record (optional)
-    if (cols->phtdehp)
-        print_boolean_record(fpout, "PHTDEHP", labels[record].phtdehp, "PHT-DEHP.tif", idoc);
-
-    // PHTBBP record (optional)
-    if (cols->phtbbp)
-        print_boolean_record(fpout, "PHTBBP", labels[record].phtbbp, F_ "PHT-BBP.tif", idoc);
-
-    // PHTDINP record (optional)
-    if (cols->phtdinp)
-        print_boolean_record(fpout, "PHTDINP", labels[record].phtdinp, F_ "PHT-DINP.tif", idoc);
-
-    // REFNUMBER record (optional)
-    if (cols->refnumber)
-        print_boolean_record(fpout, "REFNUMBER", labels[record].refnumber, F_ "REF.tif", idoc);
-
-    // REF record (optional)
-    if (cols->ref && labels[record].ref)
-        print_boolean_record(fpout, "REF", labels[record].ref, F_ "REF.tif", idoc);
-
-    // RXONLY record (optional)
-    if (cols->rxonly)
-        print_boolean_record(fpout, "RXONLY", labels[record].rxonly, F_ "RX Only.tif", idoc);
-
-    // SERIAL record (optional)
-    if (cols->serial)
-        print_boolean_record(fpout, "SERIAL", labels[record].serial, F_ "Serial Number.tif", idoc);
-
-    // SIZELOGO record (optional)
-    if (cols->sizelogo)
-        print_boolean_column_header(fpout, "SIZELOGO", labels[record].sizelogo, idoc);
-
-    // TFXLOGO record (Optional: Y / N / blank)
-    if (cols->tfxlogo)
-        print_boolean_record(fpout, "TFXLOGO", labels[record].tfxlogo, F_ "TeleflexMedical.tif", idoc);
-
-    // ADDRESS record (Optional: Y / N / value / blank)
-    if (cols->address)
-        print_graphic_column_header(fpout, "ADDRESS", labels[record].address, "Nothing", idoc);
-
-    // CAUTIONSTATE record (optional: N / value)
-    if (cols->cautionstate)
-        print_graphic_column_header(fpout, "CAUTIONSTATE", labels[record].cautionstatement, "Nothing", idoc);
-
-    // CE0120 record (optional)
-    if (cols->ce0120)
-        print_graphic_column_header(fpout, "CE0120", labels[record].cemark, "Nothing", idoc);
-
-    // COOSTATE record (optional)
-    if (cols->coostate)
-        print_graphic_column_header(fpout, "COOSTATE", labels[record].coostate, "Nothing", idoc);
-
-    // DISTRIBUTEDBY record (optional)
-    if (cols->distby)
-        print_graphic_column_header(fpout, "DISTRIBUTEDBY", labels[record].distby, "Nothing", idoc);
-
-    // ECREPADDRESS record (optional)
-    if (cols->ecrepaddress)
-        print_graphic_column_header(fpout, "ECREPADDRESS", labels[record].ecrepaddress, "Nothing", idoc);
-
-    // FLGRAPHIC record (optional)
-    if (cols->flgraphic)
-        print_graphic_column_header(fpout, "FLGRAPHIC", labels[record].flgraphic, "Nothing", idoc);
-
-    // LABELGRAPH1 record (optional)
-    if (cols->labelgraph1)
-        print_graphic_column_header(fpout, "LABELGRAPH1", labels[record].labelgraph1, "Nothing", idoc);
-
-    // LABELGRAPH2 record (optional)
-    if (cols->labelgraph2)
-        print_graphic_column_header(fpout, "LABELGRAPH2", labels[record].labelgraph2, "Nothing", idoc);
-
-    // LATEXSTATEMENT record (optional: N / value)
-    if (cols->latexstate)
-        print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, "Nothing", idoc);
-
-    // LOGO1 record (optional)
-    if (cols->logo1)
-        print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, "Nothing", idoc);
-
-    // LOGO2 record (optional)
-    if (cols->logo2)
-        print_graphic_column_header(fpout, "LOGO2", labels[record].logo2, "Nothing", idoc);
-
-    // LOGO3 record (optional)
-    if (cols->logo3)
-        print_graphic_column_header(fpout, "LOGO3", labels[record].logo3, "Nothing", idoc);
-
-    // LOGO4 record (optional)
-    if (cols->logo4)
-        print_graphic_column_header(fpout, "LOGO4", labels[record].logo4, "Nothing", idoc);
-
-    // LOGO5 record (optional)
-    if (cols->logo5)
-        print_graphic_column_header(fpout, "LOGO5", labels[record].logo5, "Nothing", idoc);
-
-    // MDR1 record (optional)
-    if (cols->mdr1)
-        print_graphic_column_header(fpout, "MDR1", labels[record].mdr1, "Nothing", idoc);
-
-    // MDR2 record (optional)
-    if (cols->mdr2)
-        print_graphic_column_header(fpout, "MDR2", labels[record].mdr2, "Nothing", idoc);
-
-    // MDR3 record (optional)
-    if (cols->mdr3)
-        print_graphic_column_header(fpout, "MDR3", labels[record].mdr3, "Nothing", idoc);
-
-    // MDR4 record (optional)
-    if (cols->mdr4)
-        print_graphic_column_header(fpout, "MDR4", labels[record].mdr4, "Nothing", idoc);
-
-    // MDR5 record (optional)
-    if (cols->mdr5)
-        print_graphic_column_header(fpout, "MDR5", labels[record].mdr5, "Nothing", idoc);
-
-    // MANUFACTUREDBY record (optional)
-    if (cols->manufacturedby)
-        print_graphic_column_header(fpout, "MANUFACTUREDBY", labels[record].manufacturedby, "Nothing", idoc);
-
-    // PATENTSTA record (optional)
-    if (cols->patentstatement)
-        print_graphic_column_header(fpout, "PATENTSTA", labels[record].patentstatement, "Nothing", idoc);
-
-    // STERILESTA record (optional)
-    if (cols->sterilitystatement)
-        print_graphic_column_header(fpout, "STERILESTA", labels[record].sterilitystatement, "Nothing", idoc);
-
-    // STERILITYTYPE record (this is ALWAYS printed. A missing column, or column containing "N" or "NO" will)
-    // translate to "blank-01.txt"
-    // if (cols->sterilitytype)
-//    if (strcmp(labels[record].sterilitytype, "" == 0) || equals_no(labels[record].sterilitytype))
-//        print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
-//    else
+    print_graphic_column_header(fpout, "ADDRESS", labels[record].address, "Nothing", idoc);
+    print_graphic_column_header(fpout, "CAUTIONSTATE", labels[record].cautionstatement, "Nothing", idoc);
+    print_graphic_column_header(fpout, "CE0120", labels[record].cemark, "Nothing", idoc);
+    print_graphic_column_header(fpout, "COOSTATE", labels[record].coostate, "Nothing", idoc);
+    print_graphic_column_header(fpout, "DISTRIBUTEDBY", labels[record].distby, "Nothing", idoc);
+    print_graphic_column_header(fpout, "ECREPADDRESS", labels[record].ecrepaddress, "Nothing", idoc);
+    print_graphic_column_header(fpout, "FLGRAPHIC", labels[record].flgraphic, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LABELGRAPH1", labels[record].labelgraph1, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LABELGRAPH2", labels[record].labelgraph2, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LATEXSTATEMENT", labels[record].latexstatement, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LOGO1", labels[record].logo1, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LOGO2", labels[record].logo2, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LOGO3", labels[record].logo3, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LOGO4", labels[record].logo4, "Nothing", idoc);
+    print_graphic_column_header(fpout, "LOGO5", labels[record].logo5, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MDR1", labels[record].mdr1, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MDR2", labels[record].mdr2, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MDR3", labels[record].mdr3, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MDR4", labels[record].mdr4, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MDR5", labels[record].mdr5, "Nothing", idoc);
+    print_graphic_column_header(fpout, "MANUFACTUREDBY", labels[record].manufacturedby, "Nothing", idoc);
+    print_graphic_column_header(fpout, "PATENTSTA", labels[record].patentstatement, "Nothing", idoc);
+    print_graphic_column_header(fpout, "STERILESTA", labels[record].sterilitystatement, "Nothing", idoc);
     print_graphic_column_header(fpout, "STERILITYTYPE", labels[record].sterilitytype, "blank-01.txt", idoc);
+    print_graphic_column_header(fpout, "TEMPRANGE", labels[record].temprange, "Nothing", idoc);
+    print_graphic_column_header(fpout, "VERSION", labels[record].version, "Nothing", idoc);
+    print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "yes", idoc);
 
-    // TEMPRANGE record (optional)
-    if (cols->temprange)
-        print_graphic_column_header(fpout, "TEMPRANGE", labels[record].temprange, "Nothing", idoc);
 
-    // BOMLEVEL record (optional)
-    if (cols->bomlevel)
-        print_info_column_header(fpout, "BOMLEVEL", labels[record].bomlevel, idoc);
 
-    // VERSION record (optional)
-    if (cols->version)
-        print_graphic_column_header(fpout, "VERSION", labels[record].version, "Nothing", idoc);
 
-    // INSERTGRAPHIC record (optional)
-    if (cols->insertgraphic)
-        print_graphic_column_header(fpout, "INSERTGRAPHIC", labels[record].insertgraphic, "yes", idoc);
 
     if (non_SAP_fields) {
-        // OLDLABEL record (optional)
-        if (cols->oldlabel)
-            print_info_column_header(fpout, "OLDLABEL", labels[record].oldlabel, idoc);
-
-        // OLDTEMPLATE record (optional)
-        if (cols->oldtemplate)
-            print_info_column_header(fpout, "OLDTEMPLATE", labels[record].oldtemplate, idoc);
-
-        // PREVLABEL record (optional)
-        if (cols->prevlabel)
-            print_info_column_header(fpout, "PREVLABEL", labels[record].prevlabel, idoc);
-
-        // PREVTEMPLATE record (optional)
-        if (cols->prevtemplate)
-            print_info_column_header(fpout, "PREVTEMPLATE", labels[record].prevtemplate, idoc);
+        print_info_column_header(fpout, "OLDLABEL", labels[record].oldlabel, idoc);
+        print_info_column_header(fpout, "OLDTEMPLATE", labels[record].oldtemplate, idoc);
+        print_info_column_header(fpout, "PREVLABEL", labels[record].prevlabel, idoc);
+        print_info_column_header(fpout, "PREVTEMPLATE", labels[record].prevtemplate, idoc);
+        print_info_column_header(fpout, "BOMLEVEL", labels[record].bomlevel, idoc);
 
         // DESCRIPTION record (optional)
-        if (cols->description) {
-            //check for and remove any leading...
-            if (labels[record].description[0] == '\"')
-                memmove(labels[record].description, labels[record].description + 1,
-                        (int) strlen(labels[record].description));
 
-            // ...and/or trailing quotes
-            if (labels[record].description[(int) strlen(labels[record].description) - 1] == '\"')
-                labels[record].description[(int) strlen(labels[record].description) - 1] = '\0';
+        //check for and remove any leading...
+        if (labels[record].description[0] == '\"')
+            memmove(labels[record].description, labels[record].description + 1,
+                    (int) strlen(labels[record].description));
 
-            print_info_column_header(fpout, "DESCRIPTION", labels[record].description, idoc);
-        }
+        // ...and/or trailing quotes
+        if (labels[record].description[(int) strlen(labels[record].description) - 1] == '\"')
+            labels[record].description[(int) strlen(labels[record].description) - 1] = '\0';
+
+        print_info_column_header(fpout, "DESCRIPTION", labels[record].description, idoc);
     }
     return 1;
 }
@@ -1138,7 +950,7 @@ int main(int argc, char *argv[]) {
     clock_t start = clock();
 
     // the Column_header struct that contains all spreadsheet col labels
-    Column_header columns = {0};
+    // Column_header columns = {0};
 
     // the Label_record array
     Label_record *labels;
@@ -1189,7 +1001,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
 
-    labels = (Label_record *) malloc(spreadsheet_row_number * sizeof(Label_record));
+    labels = (Label_record *) calloc(spreadsheet_row_number, spreadsheet_row_number * sizeof(Label_record));
 
     // check spreadsheet columns for duplicates
     if (duplicate_column_names(spreadsheet[0])) {
@@ -1198,8 +1010,8 @@ int main(int argc, char *argv[]) {
     }
 
     // move data into label_record fields by column header
-    if (parse_spreadsheet(spreadsheet[0], labels, &columns) == -1) {
-        printf("Problem reading spreadsheet. Aborting.\n");
+    if (parse_spreadsheet(spreadsheet[0], labels) == -1) {
+        printf("Aborting.\n");
         return EXIT_FAILURE;
     }
 
@@ -1207,8 +1019,8 @@ int main(int argc, char *argv[]) {
     sort_labels(labels);
 
     char *outputfile = (char *) malloc(strlen(argv[1]) + FILE_EXT_LEN);
-
     sscanf(argv[1], "%[^.]%*[txt]", outputfile);
+
     strcat(outputfile, "_IDoc (stoidoc).txt");
     printf("Creating IDoc file \"%s\"\n", outputfile);
 
@@ -1222,7 +1034,7 @@ int main(int argc, char *argv[]) {
     {
         int i = 1;
         while (i < spreadsheet_row_number) {
-            if ((print_label_idoc_records(fpout, labels, &columns, i, &idoc)))
+            if ((print_label_idoc_records(fpout, labels, i, &idoc)))
                 i++;
             else {
                 printf("Content error in text-delimited spreadsheet, line %d. Aborting.\n", i);
@@ -1238,15 +1050,14 @@ int main(int argc, char *argv[]) {
         free(spreadsheet[i]);
     free(spreadsheet);
 
-    if (columns.tdline)
-        for (int i = 1; i < spreadsheet_row_number; i++)
-            free(labels[i].tdline);
+    for (int i = 1; i < spreadsheet_row_number; i++)
+        free(labels[i].tdline);
 
     free(labels);
 
     clock_t stop = clock();
     double elapsed = (double) (stop - start) / CLOCKS_PER_SEC;
-    printf("\nTime elapsed: %.5f\n", elapsed);
+    printf("\nTime elapsed in stoidoc: %.5f\n", elapsed);
 
     return EXIT_SUCCESS;
 }

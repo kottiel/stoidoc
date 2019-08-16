@@ -232,8 +232,10 @@ int duplicate_column_names(const char *cols) {
 }
 
 
-int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
+int parse_spreadsheet(char *buffer, Label_record *labels) {
     unsigned short count = 0;
+    bool material = 0;
+    bool pcode = 0;
 
     char tab_str = TAB;
     char contents[MAX_COLUMNS];
@@ -245,61 +247,54 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
 
         if (strcmp(token, "LABEL") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
-                if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strlcpy(labels[i].label, contents, sizeof(labels[i].label));
-                    cols->label = count;
-                } else {
-                    strlcpy(labels[i].label, "", 1);
-                }
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].label, contents, sizeof(labels[i].label));
             }
         } else if ((strcmp(token, "MATERIAL") == 0) ||
                    (strcmp(token, "PCODE") == 0)) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
-                if (get_field_contents_from_row(contents, i, count, tab_str)) {
-                    strlcpy(labels[i].material, contents, sizeof(labels[i].material));
-                    cols->material = count;
-                }
+                get_field_contents_from_row(contents, i, count, tab_str);
+                strlcpy(labels[i].material, contents, sizeof(labels[i].material));
             }
-            if (strcmp(token, "PCODE") == 0)
+            if (strcmp(token, "MATERIAL") == 0)
+                material = true;
+            else {
+                pcode = true;
                 printf("Column \"PCODE\" subsituted for \"MATERIAL\"\n");
+            }
+            if (pcode && material) {
+                printf("Found both \"MATERIAL\" and \"PCODE\" column headings. Eliminate one of these.\n");
+                return -1;
+            }
 
         } else if (strcmp(token, "TDLINE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 labels[i].tdline = (char *) malloc(strlen(contents) + 1);
                 strlcpy(labels[i].tdline, contents, sizeof(contents));
-                cols->tdline = count;
             }
         } else if (strcmp(token, "ADDRESS") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].address, contents, sizeof(labels[i].address));
-                if (!(equals_no(contents)))
-                    cols->address = count;
             }
 
         } else if (strcmp(token, "BARCODETEXT") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].barcodetext, contents, sizeof(labels[i].barcodetext));
-                if (!(equals_no(contents)))
-                    cols->barcodetext = count;
             }
 
         } else if (strcmp(token, "BARCODE1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].barcode1, contents, sizeof(labels[i].barcode1));
-                if (!(equals_no(contents)))
-                    cols->barcode1 = count;
             }
 
         } else if (strcmp(token, "GS1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].gs1, contents, sizeof(labels[i].gs1));
-                if (!(equals_no(contents)))
-                    cols->gs1 = count;
             }
 
         } else if (strcmp(token, "GTIN") == 0) {
@@ -307,8 +302,6 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].gtin, contents, sizeof(labels[i].gtin));
-                    if (!(equals_no(contents)))
-                        cols->gtin = count;
                 }
             } else
                 printf("Ignoring column \"%s\"\n", token);
@@ -318,68 +311,58 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].bomlevel, contents, sizeof(labels[i].bomlevel));
-                if (!(equals_no(contents)))
-                    cols->bomlevel = count;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "CAUTION") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].caution = true;
-                    cols->caution = count;
-                } else
-                    labels[i].caution = false;
+                if (equals_yes(contents))
+                    labels[i].caution = 2;
+                else if (equals_no(contents))
+                    labels[i].caution = 1;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "CAUTIONSTATE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].cautionstatement, contents, sizeof(labels[i].cautionstatement));
-                if (!(equals_no(contents)))
-                    cols->cautionstate = count;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "CE0120") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].cemark, contents, sizeof(labels[i].cemark));
-                if (!(equals_no(contents)))
-                    cols->ce0120 = count;
-
             }
+
         } else if (strcmp(token, "CONSULTIFU") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].consultifu = true;
-                    cols->consultifu = count;
-                } else
-                    labels[i].consultifu = false;
+                if (equals_yes(contents))
+                    labels[i].consultifu = 2;
+                else if (equals_no(contents))
+                    labels[i].consultifu = 1;
             }
+
         } else if (strcmp(token, "CONTAINSLATEX") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].latex = true;
-                    cols->latex = count;
-                } else
-                    labels[i].latex = false;
+                if (equals_yes(contents))
+                    labels[i].latex = 2;
+                else if (equals_no(contents))
+                    labels[i].latex = 1;
             }
+
         } else if (strcmp(token, "COOSTATE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].coostate, contents, sizeof(labels[i].coostate));
-                if (!(equals_no(contents)))
-                    cols->coostate = count;
             }
+
         } else if (strcmp(token, "DESCRIPTION") == 0) {
             if (non_SAP_fields)
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].description, contents, sizeof(labels[i].description));
-                    if (!(equals_no(contents)))
-                        cols->description = count;
                 }
             else
                 printf("Ignoring column \"%s\"\n", token);
@@ -388,290 +371,244 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].distby, contents, sizeof(labels[i].distby));
-                if (!equals_no(contents))
-                    cols->distby = count;
             }
+
         } else if ((strcmp(token, "DONOTUSEDAM") == 0) ||
                 (strcmp(token, "DONOTPAKDAM") == 0)) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].donotusedamaged = true;
-                    cols->donotusedam = count;
-                } else
-                    labels[i].donotusedamaged = false;
+                if (equals_yes(contents))
+                    labels[i].donotusedamaged = 2;
+                else if (equals_no(contents))
+                    labels[i].donotusedamaged = 1;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "ECREP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents) > 0) {
-                    if (equals_yes(contents)) {
-                        labels[i].ecrep = true;
-                        cols->ecrep = count;
-                    } else
-                        labels[i].ecrep = false;
-                }
+                if (equals_yes(contents))
+                    labels[i].ecrep = 2;
+                else if (equals_no(contents))
+                    labels[i].ecrep = 1;
             }
-/******************************************************************************/
 
         } else if (strcmp(token, "ECREPADDRESS") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].ecrepaddress, contents, sizeof(labels[i].ecrepaddress));
-                if (!equals_no(contents))
-                    cols->ecrepaddress = count;
             }
+
         } else if (strcmp(token, "ELECTROSURIFU") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].electroifu = true;
-                    cols->electroifu = count;
-                } else
-                    labels[i].electroifu = false;
+                if (equals_yes(contents))
+                    labels[i].electroifu = 2;
+                else if (equals_no(contents))
+                    labels[i].electroifu = 1;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "EXPDATE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents) > 0) {
-                    if (equals_yes(contents)) {
-                        labels[i].expdate = true;
-                        cols->expdate = count;
-                    } else
-                        labels[i].expdate = false;
-                }
+                if (equals_yes(contents))
+                    labels[i].expdate = 2;
+                else if (equals_no(contents))
+                    labels[i].expdate = 1;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "FLGRAPHIC") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].flgraphic, contents, sizeof(labels[i].flgraphic));
-                if (!equals_no(contents))
-                    cols->flgraphic = count;
-
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "KEEPAWAYHEAT") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents)) {
-                    if (equals_yes(contents)) {
-                        labels[i].keepawayheat = true;
-                        cols->keepawayheat = count;
-                    } else
-                        labels[i].keepawayheat = false;
-                }
+                if (equals_yes(contents))
+                    labels[i].keepawayheat = 2;
+                else if (equals_no(contents))
+                    labels[i].keepawayheat = 1;
             }
-/******************************************************************************/
+
         } else if (strcmp(token, "INSERTGRAPHIC") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].insertgraphic, contents, sizeof(labels[i].insertgraphic));
-                if (!(equals_no(contents)))
-                    cols->insertgraphic = count;
             }
+
         } else if (strcmp(token, "KEEPDRY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].keepdry = true;
-                    cols->keepdry = count;
-                } else
-                    labels[i].keepdry = false;
+                if (equals_yes(contents))
+                    labels[i].keepdry = 2;
             }
+
         } else if (strcmp(token, "LABELGRAPH1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].labelgraph1, contents, sizeof(labels[i].labelgraph1));
-                if (!(equals_no(contents)))
-                    cols->labelgraph1 = count;
             }
+
         } else if (strcmp(token, "LABELGRAPH2") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].labelgraph2, contents, sizeof(labels[i].labelgraph2));
-                if (!(equals_no(contents)))
-                    cols->labelgraph2 = count;
             }
+
         } else if (strcmp(token, "LATEXFREE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].latexfree = true;
-                    cols->latexfree = count;
-                } else
-                    labels[i].latexfree = false;
+                if (equals_yes(contents))
+                    labels[i].latexfree = 2;
+                else if (equals_no(contents))
+                    labels[i].latexfree = 1;
             }
+
         } else if (strcmp(token, "LATEXSTATEMENT") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].latexstatement, contents, sizeof(labels[i].latexstatement));
-                if (!(equals_no(contents)))
-                    cols->latexstate = count;
             }
+
         } else if (strcmp(token, "LEVEL") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].level, contents, sizeof(labels[i].level));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->level = count;
             }
+
         } else if (strcmp(token, "LOGO1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].logo1, contents, sizeof(labels[i].logo1));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->logo1 = count;
             }
+
         } else if (strcmp(token, "LOGO2") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].logo2, contents, sizeof(labels[i].logo2));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->logo2 = count;
             }
+
         } else if (strcmp(token, "LOGO3") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].logo3, contents, sizeof(labels[i].logo3));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->logo3 = count;
             }
+
         } else if (strcmp(token, "LOGO4") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].logo4, contents, sizeof(labels[i].logo4));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->logo4 = count;
             }
+
         } else if (strcmp(token, "LOGO5") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].logo5, contents, sizeof(labels[i].logo5));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->logo5 = count;
             }
+
         } else if (strcmp(token, "MDR1") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].mdr1, contents, sizeof(labels[i].mdr1));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->mdr1 = count;
             }
+
         } else if (strcmp(token, "MDR2") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].mdr2, contents, sizeof(labels[i].mdr2));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->mdr2 = count;
             }
+
         } else if (strcmp(token, "MDR3") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].mdr3, contents, sizeof(labels[i].mdr3));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->mdr3 = count;
             }
+
         } else if (strcmp(token, "MDR4") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].mdr4, contents, sizeof(labels[i].mdr4));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->mdr4 = count;
             }
+
         } else if (strcmp(token, "MDR5") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 if (get_field_contents_from_row(contents, i, count, tab_str)) {
                     strlcpy(labels[i].mdr5, contents, sizeof(labels[i].mdr5));
-                    if (strlen(contents) && (!(equals_no(contents))))
-                        cols->mdr5 = count;
                 }
             }
+
         } else if (strcmp(token, "LOTGRAPHIC") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].lotgraphic = true;
-                    cols->lotgraphic = count;
-                } else
-                    labels[i].lotgraphic = false;
+                    labels[i].lotgraphic = 2;
+                } else if (equals_no(contents))
+                    labels[i].lotgraphic = 1;
             }
         } else if (strcmp(token, "LTNUMBER") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strncpy(labels[i].ltnumber, contents, sizeof(labels[0].ltnumber));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->ltnumber = count;
             }
 
         } else if (strcmp(token, "IPN") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strncpy(labels[i].ipn, contents, sizeof(labels[0].ipn));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->ipn = count;
             }
+
         } else if (strcmp(token, "MANINBOX") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].maninbox = true;
-                    cols->maninbox = count;
-                } else
-                    labels[i].maninbox = false;
+                if (equals_yes(contents))
+                    labels[i].maninbox = 2;
+                else if (equals_no(contents))
+                    labels[i].maninbox = 1;
             }
         } else if (strcmp(token, "MANUFACTUREDBY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].manufacturedby, contents, sizeof(labels[i].manufacturedby));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->manufacturedby = count;
             }
+
         } else if (strcmp(token, "MANUFACTURER") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].manufacturer = true;
-                    cols->manufacturer = count;
-                } else
-                    labels[i].manufacturer = false;
+                    labels[i].manufacturer = 2;
+                } else if (equals_no(contents))
+                    labels[i].manufacturer = 1;
             }
         } else if (strcmp(token, "MFGDATE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].mfgdate = true;
-                    //cols->mfgdate = count;
-                } else
-                    labels[i].mfgdate = false;
+                    labels[i].mfgdate = 2;
+                } else if (equals_no(contents))
+                    labels[i].mfgdate = 1;
             }
         } else if (strcmp(token, "NORESTERILE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].noresterilize = true;
-                    cols->noresterile = count;
-                } else
-                    labels[i].noresterilize = false;
+                    labels[i].noresterilize = 2;
+                } else if (equals_no(contents))
+                    labels[i].noresterilize = 1;
             }
         } else if (strcmp(token, "NONSTERILE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].nonsterile = true;
-                    cols->nonsterile = count;
-                } else
-                    labels[i].nonsterile = false;
+                    labels[i].nonsterile = 2;
+                } else if (equals_no(contents))
+                    labels[i].nonsterile = 1;
             }
         } else if (strcmp(token, "OLDLABEL") == 0) {
             if (non_SAP_fields)
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].oldlabel, contents, sizeof(labels[i].oldlabel));
-                    if (strlen(contents) && (!(equals_no(contents))))
-                        cols->oldlabel = count;
                 }
             else
                 printf("Ignoring column \"%s\"\n", token);
@@ -681,8 +618,6 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].oldtemplate, contents, sizeof(labels[i].oldtemplate));
-                    if (strlen(contents) && (!(equals_no(contents))))
-                        cols->oldtemplate = count;
                 }
             else
                 printf("Ignoring column \"%s\"\n", token);
@@ -692,8 +627,6 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].prevlabel, contents, sizeof(labels[i].prevlabel));
-                    if (strlen(contents) && (!(equals_no(contents))))
-                        cols->prevlabel = count;
                 }
             else
                 printf("Ignoring column \"%s\"\n", token);
@@ -703,201 +636,185 @@ int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols) {
                 for (int i = 1; i < spreadsheet_row_number; i++) {
                     get_field_contents_from_row(contents, i, count, tab_str);
                     strlcpy(labels[i].prevtemplate, contents, sizeof(labels[i].prevtemplate));
-                    if (strlen(contents) && (!(equals_no(contents))))
-                        cols->prevtemplate = count;
                 }
             else
                 printf("Ignoring column \"%s\"\n", token);
+
         } else if (strcmp(token, "PATENTSTA") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].patentstatement, contents, sizeof(labels[i].patentstatement));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->patentstatement = count;
             }
+
         } else if (strcmp(token, "PHTDEHP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents)) {
-                    if (strcmp("Y", contents) == 0) {
-                        labels[i].phtdehp = true;
-                        cols->phtdehp = count;
-                    } else
-                        labels[i].phtdehp = false;
-                }
+                if (equals_yes(contents)) {
+                    labels[i].phtdehp = 2;
+                } else if (equals_no(contents))
+                    labels[i].phtdehp = 1;
             }
+
         } else if (strcmp(token, "PHTBBP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].phtbbp = true;
-                    cols->phtbbp = count;
-                } else
-                    labels[i].phtbbp = false;
+                    labels[i].phtbbp = 2;
+                } else if (equals_no(contents))
+                    labels[i].phtbbp = 1;
             }
+
         } else if (strcmp(token, "PHTDINP") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].phtdinp = true;
-                    cols->phtdinp = count;
-                } else
-                    labels[i].phtdinp = false;
+                if (equals_yes(contents))
+                    labels[i].phtdinp = 2;
+                else if (equals_no(contents))
+                    labels[i].phtdinp = 1;
             }
+
         } else if (strcmp(token, "PVCFREE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (equals_yes(contents)) {
-                    labels[i].pvcfree = true;
-                    cols->pvcfree = count;
-                } else
-                    labels[i].pvcfree = false;
+                if (equals_yes(contents))
+                    labels[i].pvcfree = 2;
+                else if (equals_no(contents))
+                    labels[i].pvcfree = 1;
             }
         } else if (strcmp(token, "QUANTITY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].quantity, contents, sizeof(labels[i].quantity));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->quantity = count;
             }
+
         } else if (strcmp(token, "REF") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].ref = true;
-                    cols->ref = count;
-                } else
-                    labels[i].ref = false;
+                    labels[i].ref = 2;
+                } else if (equals_no(contents))
+                    labels[i].ref = 1;
             }
+
         } else if (strcmp(token, "REFNUMBER") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents)) {
-                    if (equals_yes(contents)) {
-                        labels[i].refnumber = true;
-                        cols->refnumber = count;
-                    } else
-                        labels[i].refnumber = false;
-                }
+                if (equals_yes(contents)) {
+                    labels[i].refnumber = 2;
+                } else if (equals_no(contents))
+                    labels[i].refnumber = 1;
             }
+
         } else if (strcmp(token, "REUSABLE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].reusable = true;
-                    cols->reusable = count;
-                } else
-                    labels[i].reusable = false;
+                    labels[i].reusable = 2;
+                } else if (equals_no(contents))
+                    labels[i].reusable = 1;
             }
         } else if (strcmp(token, "REVISION") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].revision, contents, sizeof(labels[i].revision));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->revision = count;
-
             }
+
         } else if (strcmp(token, "RXONLY") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].rxonly = true;
-                    cols->rxonly = count;
-                } else
-                    labels[i].rxonly = false;
+                    labels[i].rxonly = 2;
+                } else if (equals_no(contents))
+                    labels[i].rxonly = 1;
             }
+
         } else if (strcmp(token, "SINGLEUSE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].singleuseonly = true;
-                    cols->singleuse = count;
-                } else
-                    labels[i].singleuseonly = false;
+                    labels[i].singleuseonly = 2;
+                } else if (equals_no(contents))
+                    labels[i].singleuseonly = 1;
             }
+
         } else if (strcmp(token, "SERIAL") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
-                if (strlen(contents)) {
-                    if (equals_yes(contents)) {
-                        labels[i].serial = true;
-                        cols->serial = count;
-                    } else
-                        labels[i].serial = false;
-                }
+                if (equals_yes(contents)) {
+                    labels[i].serial = 2;
+                } else if (equals_no(contents))
+                    labels[i].serial = 1;
             }
+
         } else if (strcmp(token, "SINGLEPATIENTUSE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].singlepatientuse = true;
-                    cols->singlepatientuse = count;
-                } else
-                    labels[i].singlepatientuse = false;
+                    labels[i].singlepatientuse = 2;
+                } else if (equals_no(contents))
+                    labels[i].singlepatientuse = 1;
             }
+
         } else if (strcmp(token, "SIZE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].size, contents, sizeof(labels[i].size));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->size = count;
             }
+
         } else if (strcmp(token, "SIZELOGO") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].sizelogo = true;
-                    cols->sizelogo = count;
-                } else
-                    labels[i].sizelogo = false;
+                    labels[i].sizelogo = 2;
+                } else if (equals_no(contents))
+                    labels[i].sizelogo = 1;
             }
+
         } else if (strcmp(token, "STERILITYTYPE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].sterilitytype, contents, sizeof(labels[i].sterilitytype));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->sterilitytype = count;
             }
+
         } else if (strcmp(token, "STERILESTA") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].sterilitystatement, contents, sizeof(labels[i].sterilitystatement));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->sterilitystatement = count;
             }
+
         } else if (strcmp(token, "TEMPRANGE") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].temprange, contents, sizeof(labels[i].temprange));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->temprange = count;
             }
+
         } else if ((strcmp(token, "TEMPLATENUMBER") == 0) ||
                    (strcmp(token, "TEMPLATE") == 0)) {
-            cols->templatenumber = count;
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].template, contents, sizeof(labels[i].template));
             }
+
         } else if (strcmp(token, "TFXLOGO") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 if (equals_yes(contents)) {
-                    labels[i].tfxlogo = true;
-                    cols->tfxlogo = count;
-                } else
-                    labels[i].tfxlogo = false;
+                    labels[i].tfxlogo = 2;
+                } else if (equals_no(contents))
+                    labels[i].tfxlogo = 1;
             }
+
         } else if (strcmp(token, "VERSION") == 0) {
             for (int i = 1; i < spreadsheet_row_number; i++) {
                 get_field_contents_from_row(contents, i, count, tab_str);
                 strlcpy(labels[i].version, contents, sizeof(labels[i].version));
-                if (strlen(contents) && (!(equals_no(contents))))
-                    cols->version = count;
             }
         } else {
-            if (strlen(token) > 0)
+            if (strlen(token) > 0) {
+                if (strcmp(token, "CAUTIONSTATEMENT") == 0)
+                    printf("Change \"%s\" to \"CAUTIONSTATE.\" ", token);
                 printf("Ignoring column \"%s\"\n", token);
+            }
         }
         count++;
         free(token);

@@ -96,121 +96,37 @@ typedef struct {
     char revision[MAX_REV_LEN];
     char *tdline;
 
-    bool caution;
-    bool consultifu;
-    bool donotusedamaged;
-    bool ecrep;
-    bool electroifu;
-    bool expdate;
-    bool keepdry;
-    bool keepawayheat;
-    bool latex;
-    bool latexfree;
-    bool lotgraphic;
-    bool maninbox;
-    bool manufacturer;
-    bool mfgdate;
-    bool nonsterile;
-    bool noresterilize;
-    bool phtbbp;
-    bool phtdinp;
-    bool phtdehp;
-    bool pvcfree;
-    bool ref;
-    bool refnumber;
-    bool reusable;
-    bool serial;
-    bool sizelogo;
-    bool rxonly;
-    bool singlepatientuse;
-    bool singleuseonly;
-    bool tfxlogo;
+    unsigned int caution : 2;
+    unsigned int consultifu : 2;
+    unsigned int donotusedamaged : 2;
+    unsigned int electroifu : 2;
+    unsigned int keepdry : 2;
+    unsigned int latex : 2;
+    unsigned int latexfree : 2;
+    unsigned int maninbox : 2;
+    unsigned int nonsterile : 2;
+    unsigned int noresterilize : 2;
+    unsigned int pvcfree : 2;
+    unsigned int reusable : 2;
+    unsigned int singlepatientuse : 2;
+    unsigned int singleuseonly : 2;
+    unsigned int ecrep : 2;
+    unsigned int expdate : 2;
+    unsigned int keepawayheat : 2;
+    unsigned int lotgraphic : 2;
+    unsigned int manufacturer : 2;
+    unsigned int mfgdate : 2;
+    unsigned int phtbbp : 2;
+    unsigned int phtdehp : 2;
+    unsigned int phtdinp : 2;
+    unsigned int ref : 2;
+    unsigned int refnumber : 2;
+    unsigned int rxonly : 2;
+    unsigned int serial : 2;
+    unsigned int sizelogo : 2;
+    unsigned int tfxlogo : 2;
 
 } Label_record;
-
-/**
-
-*/
-typedef struct {
-    unsigned short address;
-    unsigned short barcodetext;
-    unsigned short barcode1;
-    unsigned short bomlevel;
-    unsigned short caution;
-    unsigned short cautionstate;
-    unsigned short ce0120;
-    unsigned short consultifu;
-    unsigned short coostate;
-    unsigned short description;
-    unsigned short distby;
-    unsigned short donotusedam;
-    unsigned short ecrep;
-    unsigned short ecrepaddress;
-    unsigned short electroifu;
-    unsigned short expdate;
-    unsigned short flgraphic;
-    unsigned short gs1;
-    unsigned short gtin;
-    unsigned short insertgraphic;
-    unsigned short ipn;
-    unsigned short keepawayheat;
-    unsigned short keepdry;
-    unsigned short label;
-    unsigned short labelgraph1;
-    unsigned short labelgraph2;
-    unsigned short latex;
-    unsigned short latexfree;
-    unsigned short latexstate;
-    unsigned short manufacturedby;
-    unsigned short level;
-    unsigned short logo1;
-    unsigned short logo2;
-    unsigned short logo3;
-    unsigned short logo4;
-    unsigned short logo5;
-    unsigned short mdr1;
-    unsigned short mdr2;
-    unsigned short mdr3;
-    unsigned short mdr4;
-    unsigned short mdr5;
-    unsigned short lotgraphic;
-    unsigned short ltnumber;
-    unsigned short maninbox;
-    unsigned short manufacturer;
-    unsigned short material;
-    unsigned short mfgdate;
-    unsigned short nonsterile;
-    unsigned short noresterile;
-    unsigned short oldlabel;
-    unsigned short oldtemplate;
-    unsigned short patentstatement;
-    unsigned short pcode;
-    unsigned short phtdehp;
-    unsigned short phtbbp;
-    unsigned short phtdinp;
-    unsigned short prevlabel;
-    unsigned short prevtemplate;
-    unsigned short pvcfree;
-    unsigned short quantity;
-    unsigned short ref;
-    unsigned short refnumber;
-    unsigned short reusable;
-    unsigned short revision;
-    unsigned short rxonly;
-    unsigned short serial;
-    unsigned short singleuse;
-    unsigned short singlepatientuse;
-    unsigned short size;
-    unsigned short sizelogo;
-    unsigned short sterilitystatement;
-    unsigned short sterilitytype;
-    unsigned short temprange;
-    unsigned short tdline;
-    unsigned short templatenumber;
-    unsigned short tfxlogo;
-    unsigned short version;
-
-} Column_header;
 
 int duplicate_column_names(const char *column_names);
 
@@ -221,7 +137,7 @@ int duplicate_column_names(const char *column_names);
     @param cols is a pointer to a Column_header struct
     @return the number of column headings identified
 */
-int parse_spreadsheet(char *buffer, Label_record *labels, Column_header *cols);
+int parse_spreadsheet(char *buffer, Label_record *labels);
 
 /**
     get_token dynamically allocates a text substring and copies the substring

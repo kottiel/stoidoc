@@ -7,7 +7,6 @@
 
 /** Case-INsensitive ALPHABETIZED SAP Characteristic Value Lookup        */
 char lookup[][2][LRG] = {
-
         {"220000959",                      "220000959FL"},
         {"220000960",                      "220000960FL"},
         {"220001611",                      "220001611FL"},
@@ -128,26 +127,26 @@ char lookup[][2][LRG] = {
         {"LID",                            "LID"},
         {"MAT",                            "MAT"},
         {"MULTI",                          "Multi-Language"},
-        {"N",                              "blank-01"},
-        {"N/A",                            "N/A"},
-        {"NO",                             "blank-01"},
-        {"NONSTERILE",                     "blank-01"},
-        {"PK",                             "Pack"},
-        {"POLYBAG",                        "Poly Bag"},
-        {"Pouch Label",                    "Pouch Label"},
-        {"POUCHLABEL",                     "Pouch Label"},
-        {"PRODUCTLABEL",                   "Product Label"},
-        {"SALES UNIT",                     "SALES UNIT"},
-        {"SALESUNIT",                      "Sales Unit"},
-        {"SHIPPER",                        "Shipper"},
-        {"SHIPPERLABEL",                   "Shipper Label"},
-        {"STERILEEO",                      "Sterile_EO"},
-        {"STERILER",                       "SterileR"},
-        {"UNIT LABEL",                     "Unit Label"},
-        {"UNITOFUSE",                      "Unit Of Use"},
-        {"VCS",                            "Variable Case"},
+        {"N",            "blank-01"},
+        {"N/A",          "N/A"},
+        {"NO",           "blank-01"},
+        {"NONSTERILE",   "blank-01"},
+        {"PK",           "Pack"},
+        {"POLYBAG",      "Poly Bag"},
+        {"Pouch Label",  "Pouch Label"},
+        {"POUCHLABEL",   "Pouch Label"},
+        {"PRODUCTLABEL", "Product Label"},
+        {"RUSCH_LOGO",   "Rusch"},
+        {"SALES UNIT",   "SALES UNIT"},
+        {"SALESUNIT",    "Sales Unit"},
+        {"SHIPPER",      "Shipper"},
+        {"SHIPPERLABEL", "Shipper Label"},
+        {"STERILEEO",    "Sterile_EO"},
+        {"STERILER",     "SterileR"},
+        {"UNIT LABEL",   "Unit Label"},
+        {"UNITOFUSE",    "Unit Of Use"},
+        {"VCS",          "Variable Case"},
         {"WECK_LOGO",                      "Wecklogo"}
-
 
 };
 
